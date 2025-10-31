@@ -26,7 +26,7 @@ class Lead(Base):
     source: Mapped[str] = mapped_column(String(100), nullable=False)
     location: Mapped[str | None] = mapped_column(String(255), nullable=True)
     current_score: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    classification: Mapped[str | None] = mapped_column(LeadClassification, nullable=True)
+    classification: Mapped[str] = mapped_column(LeadClassification, default="cold", nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False

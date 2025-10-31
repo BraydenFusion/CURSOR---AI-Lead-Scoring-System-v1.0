@@ -4,6 +4,7 @@ services:
   postgres:
     image: postgres:15
     restart: unless-stopped
+    container_name: lead-scoring-postgres
     environment:
       POSTGRES_DB: lead_scoring
       POSTGRES_USER: postgres
@@ -16,6 +17,7 @@ services:
   redis:
     image: redis:7
     restart: unless-stopped
+    container_name: lead-scoring-redis
     ports:
       - "6379:6379"
     command: ["redis-server", "--appendonly", "yes"]

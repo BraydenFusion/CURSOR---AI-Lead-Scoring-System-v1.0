@@ -2,7 +2,7 @@
 
 from .lead import LeadCreate, LeadRead, LeadListResponse, LeadUpdate
 from .activity import ActivityCreate, ActivityRead
-from .score import ScoreBreakdown, ScoreResponse
+from .score import ScoreBreakdown, ScoreDetails, ScoreFactor, ScoreResponse
 
 __all__ = [
     "LeadCreate",
@@ -13,4 +13,6 @@ __all__ = [
     "ActivityRead",
     "ScoreBreakdown",
     "ScoreResponse",
+    "ScoreDetails",
+    "ScoreFactor",
 ]

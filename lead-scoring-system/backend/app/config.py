@@ -4,7 +4,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Optional
 
-from pydantic import BaseSettings, Field, PostgresDsn, RedisDsn
+from pydantic import BaseSettings, Field, RedisDsn
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     app_name: str = Field("Lead Scoring System")
     environment: str = Field("development")
 
-    database_url: PostgresDsn = Field(
+    database_url: str = Field(
         "postgresql+psycopg://postgres:postgres@localhost:5432/lead_scoring",
         description="SQLAlchemy-compatible PostgreSQL DSN.",
     )

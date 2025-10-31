@@ -31,7 +31,7 @@ class LeadUpdate(BaseModel):
 class LeadRead(LeadBase):
     id: UUID
     current_score: int
-    classification: Optional[str]
+    classification: str
     created_at: datetime
     updated_at: datetime
 
@@ -40,7 +40,8 @@ class LeadRead(LeadBase):
 
 
 class LeadListResponse(BaseModel):
-    items: List[LeadRead]
+    leads: List[LeadRead]
     total: int
     page: int
     per_page: int
+    total_pages: int

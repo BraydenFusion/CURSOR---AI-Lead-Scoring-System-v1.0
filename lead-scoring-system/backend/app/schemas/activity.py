@@ -9,18 +9,18 @@ from pydantic import BaseModel, Field
 
 class ActivityBase(BaseModel):
     activity_type: str = Field(..., max_length=100)
-    points_awarded: int = Field(0, ge=0)
     timestamp: Optional[datetime] = None
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
 class ActivityCreate(ActivityBase):
-    pass
+    lead_id: Optional[UUID] = None
 
 
 class ActivityRead(ActivityBase):
     id: UUID
     lead_id: UUID
+    points_awarded: int
 
     class Config:
         orm_mode = True
