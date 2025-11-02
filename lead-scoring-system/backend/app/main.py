@@ -14,6 +14,8 @@ from .middleware.error_handler import (
     http_exception_handler,
     validation_exception_handler,
 )
+import logging
+
 from .utils.logger import setup_logging
 from .config import get_settings
 
@@ -21,8 +23,13 @@ settings = get_settings()
 
 # Initialize logging
 setup_logging()
+logger = logging.getLogger(__name__)
 
-app = FastAPI(title=settings.app_name, version="2.0.0", debug=settings.environment == "development")
+app = FastAPI(
+    title=settings.app_name,
+    version="2.0.0",
+    debug=settings.environment == "development"
+)
 
 # Configure rate limiting (optional - can be disabled in development)
 try:
@@ -36,18 +43,21 @@ except Exception:
 def configure_cors(application: FastAPI) -> None:
     """Configure CORS based on environment."""
 
-    from app.config import get_settings
-
-    settings = get_settings()
-
-    # In production, use configured origins; in development, allow all
+    # Use settings for allowed origins (handles Railway environment)
+    allow_origins = settings.cors_origins
+    
+    # In development, allow all if no specific origins set
+    if settings.environment != "production" and not allow_origins:
+        allow_origins = ["*"]
+    
+    # Filter out wildcard in production
     if settings.environment == "production":
-        allow_origins = [origin for origin in settings.cors_origins if origin != "*"]
+        allow_origins = [origin for origin in allow_origins if origin != "*"]
         if not allow_origins:
             # Fallback to localhost if misconfigured
             allow_origins = ["http://localhost:5173"]
-    else:
-        allow_origins = ["*"]
+    
+    logger.info(f"CORS allowed origins: {allow_origins}")
 
     application.add_middleware(
         CORSMiddleware,
@@ -64,10 +74,32 @@ def configure_routers(application: FastAPI) -> None:
     application.include_router(api_router, prefix="/api")
 
 
+@app.get("/")
+def root():
+    """Root endpoint."""
+    return {
+        "message": f"{settings.app_name} v2.0",
+        "status": "operational",
+        "environment": settings.railway_environment or settings.environment
+    }
+
+
 @app.get("/health")
 async def health_check():
     """Health check endpoint."""
-    return {"status": "healthy"}
+    return {
+        "status": "healthy",
+        "environment": settings.railway_environment or settings.environment
+    }
+
+
+@app.on_event("startup")
+async def startup_event():
+    """Startup event handler."""
+    logger.info(f"Starting {settings.app_name}")
+    logger.info(f"Environment: {settings.railway_environment or settings.environment}")
+    logger.info(f"Debug mode: {settings.environment == 'development'}")
+    logger.info(f"Port: {settings.port}")
 
 
 # Configure middleware

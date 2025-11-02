@@ -1,10 +1,20 @@
 import axios from "axios";
 
-const baseURL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000/api";
+// Use environment variable, fallback to local
+// Railway will set VITE_API_URL or use VITE_API_BASE_URL
+const API_BASE_URL = 
+  import.meta.env.VITE_API_URL || 
+  import.meta.env.VITE_API_BASE_URL || 
+  'http://localhost:8000/api';
+
+console.log('API Base URL:', API_BASE_URL);
 
 export const apiClient = axios.create({
-  baseURL,
+  baseURL: API_BASE_URL,
   timeout: 10_000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
 
 // Add token to all requests

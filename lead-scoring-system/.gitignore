@@ -1,3 +1,16 @@
+# Environment files
+.env
+.env.local
+.env.production
+.env.*.local
+backend/.env
+backend/.env.*
+frontend/.env.local
+frontend/.env.production
+
+# Railway
+.railway
+
 # Python
 __pycache__/
 *.py[cod]
