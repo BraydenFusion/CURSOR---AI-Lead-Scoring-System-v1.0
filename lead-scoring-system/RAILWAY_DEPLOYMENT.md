@@ -11,24 +11,51 @@
 
 ## PART 1: BACKEND DEPLOYMENT
 
+### ⚠️ CRITICAL: Root Directory Configuration
+
+**Your code is in `lead-scoring-system/backend/`, but Railway checks the repo root by default.**
+
+**You MUST set the root directory BEFORE Railway can build your app!**
+
+---
+
 ### Step 1: Create Railway Project
 
 1. Go to https://railway.app/new
 2. Click "Deploy from GitHub repo"
 3. Select your repository: `BraydenFusion/CURSOR---AI-Lead-Scoring-System-v1.0`
 4. Click "Deploy Now"
+5. **The first deployment will likely fail** - this is expected! Railway is checking the wrong directory.
 
-### Step 2: Configure Backend Service
+### Step 2: Configure Root Directory (DO THIS FIRST!)
 
 **In Railway Dashboard:**
 
-1. Click on the service (will auto-detect from `backend/railway.json`)
-2. Go to **Settings**
-3. Set **Root Directory:** `lead-scoring-system/backend`
-4. Set **Start Command:** `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
-5. Click **Deploy**
+1. Click on the service that was created
+2. Go to **Settings** tab
+3. Scroll to **"Root Directory"** section
+4. **Set Root Directory to:** `lead-scoring-system/backend`
+5. Click **Save**
+6. Railway will automatically trigger a new deployment with the correct path
 
-Railway should auto-detect the configuration from `backend/railway.json`.
+**After this step, Railway should:**
+- ✅ Find `requirements.txt`
+- ✅ Find `railway.json` and `nixpacks.toml`
+- ✅ Build successfully
+
+**If you get "Railpack could not determine how to build", the root directory is wrong!**
+
+### Step 2.5: Verify Build (Optional)
+
+1. After setting root directory, check the **Deployments** tab
+2. Watch the logs - you should see:
+   ```
+   ✅ Found requirements.txt
+   ✅ Installing dependencies...
+   ✅ Build complete
+   ```
+
+Railway should auto-detect the configuration from `backend/railway.json` once the root directory is set.
 
 ### Step 3: Add PostgreSQL Database
 

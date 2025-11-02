@@ -21,12 +21,29 @@ python3 -c "import secrets; print(secrets.token_hex(32))"
 
 ## 🚀 Deployment Steps
 
+### ⚠️ IMPORTANT: Root Directory Configuration
+
+**Before deploying, you MUST set the root directory in Railway!**
+
+Your code is in `lead-scoring-system/backend/`, but Railway checks the repo root by default.
+
+---
+
 ### 1. Create Railway Project (2 min)
 
 1. Go to https://railway.app/new
 2. Click **"Deploy from GitHub repo"**
 3. Select: `BraydenFusion/CURSOR---AI-Lead-Scoring-System-v1.0`
-4. Railway will auto-detect `backend/railway.json` and create backend service
+4. Railway will create a service (it may fail initially - that's OK!)
+
+### 1.5. Fix Root Directory (CRITICAL - 1 min)
+
+1. Click on the **backend service** (or the service that was created)
+2. Click **Settings** tab
+3. Scroll to **"Root Directory"** section
+4. Set to: `lead-scoring-system/backend`
+5. Click **Save**
+6. Railway will automatically redeploy with the correct root directory
 
 ### 2. Add PostgreSQL Database (1 min)
 
@@ -60,9 +77,10 @@ DEBUG=False
 
 1. Click **+ New** → **GitHub Repo**
 2. Select **same repository** again
-3. Go to **Settings**
+3. **IMMEDIATELY go to Settings** (before it fails)
 4. Set **Root Directory:** `lead-scoring-system/frontend`
-5. Railway should auto-detect from `frontend/railway.json`
+5. Click **Save** - Railway will redeploy with correct root directory
+6. Railway will auto-detect from `frontend/railway.json`
 
 ### 6. Configure Frontend (1 min)
 
