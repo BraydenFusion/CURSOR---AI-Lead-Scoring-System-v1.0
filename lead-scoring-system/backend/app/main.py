@@ -98,19 +98,30 @@ async def health_check():
     }
 
 
+@app.get("/test")
+def test_endpoint():
+    """Simple test endpoint to verify routing."""
+    return {"message": "Test endpoint works!", "status": "ok"}
+
+
 @app.get("/debug/routes")
 def debug_routes():
     """Debug endpoint to list all available routes."""
     routes = []
     for route in app.routes:
-        if hasattr(route, 'path') and hasattr(route, 'methods'):
-            routes.append({
+        if hasattr(route, 'path'):
+            methods = list(route.methods) if hasattr(route, 'methods') and route.methods else []
+            route_info = {
                 "path": route.path,
-                "methods": list(route.methods) if route.methods else []
-            })
+                "methods": methods,
+                "name": getattr(route, 'name', 'unknown')
+            }
+            routes.append(route_info)
     return {
         "routes": routes,
-        "total": len(routes)
+        "total": len(routes),
+        "docs_enabled": app.docs_url is not None,
+        "redoc_enabled": app.redoc_url is not None
     }
 
 
@@ -121,9 +132,16 @@ async def startup_event():
     logger.info(f"Environment: {settings.railway_environment or settings.environment}")
     logger.info(f"Debug mode: {settings.environment == 'development'}")
     logger.info(f"Port: {settings.port}")
-    logger.info(f"API docs available at: /docs")
-    logger.info(f"ReDoc available at: /redoc")
-    logger.info(f"OpenAPI schema available at: /openapi.json")
+    logger.info(f"API docs available at: {app.docs_url}")
+    logger.info(f"ReDoc available at: {app.redoc_url}")
+    logger.info(f"OpenAPI schema available at: {app.openapi_url}")
+    
+    # Log all registered routes for debugging
+    logger.info("Registered routes:")
+    for route in app.routes:
+        if hasattr(route, 'path'):
+            methods = list(route.methods) if hasattr(route, 'methods') and route.methods else []
+            logger.info(f"  {methods} {route.path}")
 
 
 # Configure middleware
