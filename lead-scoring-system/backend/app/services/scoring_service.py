@@ -59,7 +59,7 @@ def _calculate_buying_signals(activities: Dict[str, int]) -> int:
 
 
 def _calculate_demographic_fit(lead: Lead) -> int:
-    demographics = lead.metadata.get("demographics", {}) if isinstance(lead.metadata, dict) else {}
+    demographics = lead._metadata.get("demographics", {}) if isinstance(lead._metadata, dict) else {}
 
     location_score = demographics.get("location_score", 0)
     income = demographics.get("income_bracket", "unknown")

@@ -6,6 +6,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.models.lead import LeadStatus
+
 
 class LeadBase(BaseModel):
     name: str = Field(..., max_length=255)
@@ -32,11 +34,15 @@ class LeadRead(LeadBase):
     id: UUID
     current_score: int
     classification: Optional[str]
+    status: LeadStatus
+    contacted_at: Optional[datetime] = None
+    qualified_at: Optional[datetime] = None
+    closed_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class LeadListResponse(BaseModel):
@@ -44,3 +50,9 @@ class LeadListResponse(BaseModel):
     total: int
     page: int
     per_page: int
+
+
+class LeadStatusUpdate(BaseModel):
+    """Schema for updating lead status."""
+
+    status: LeadStatus

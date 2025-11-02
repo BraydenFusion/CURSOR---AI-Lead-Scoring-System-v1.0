@@ -1,0 +1,162 @@
+/* Mobile Optimizations */
+
+@media (max-width: 768px) {
+  /* Larger touch targets - minimum 44x44px for accessibility */
+  button,
+  a.button,
+  input[type="submit"],
+  input[type="button"],
+  select {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Better spacing on mobile */
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  /* Prevent horizontal scroll */
+  body {
+    overflow-x: hidden;
+    width: 100%;
+  }
+
+  /* Better form inputs on mobile - 16px prevents zoom on iOS */
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  /* Stack cards on mobile */
+  .grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Better modal sizing */
+  .modal-content,
+  [role="dialog"] {
+    max-width: 95vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    margin: 1rem;
+  }
+
+  /* Improve text readability */
+  body {
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  /* Better table display on mobile */
+  table {
+    font-size: 14px;
+  }
+
+  /* Stack form fields on mobile */
+  .form-row,
+  .grid.grid-cols-2 {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Better button spacing */
+  .button-group {
+    flex-direction: column;
+  }
+
+  .button-group > * {
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Improve card padding on mobile */
+  .card,
+  [class*="rounded-lg"] {
+    padding: 1rem;
+  }
+
+  /* Better navigation on mobile */
+  nav {
+    padding: 0.75rem 1rem;
+  }
+
+  /* Optimize text sizes */
+  h1 {
+    font-size: 1.5rem;
+  }
+
+  h2 {
+    font-size: 1.25rem;
+  }
+
+  h3 {
+    font-size: 1.125rem;
+  }
+
+  /* Better spacing between sections */
+  section,
+  .section {
+    margin-bottom: 1.5rem;
+  }
+}
+
+/* Tablet optimizations */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Slightly smaller text on tablet */
+  body {
+    font-size: 15px;
+  }
+}
+
+/* Large mobile (landscape) */
+@media (max-width: 768px) and (orientation: landscape) {
+  /* Optimize for landscape mobile */
+  .container {
+    max-width: 100%;
+  }
+
+  nav {
+    padding: 0.5rem 1rem;
+  }
+}
+
+/* Touch-friendly improvements */
+@media (hover: none) and (pointer: coarse) {
+  /* Larger click targets for touch devices */
+  a,
+  button,
+  [role="button"] {
+    padding: 0.75rem 1rem;
+  }
+
+  /* Remove hover effects on touch devices */
+  button:hover,
+  a:hover {
+    opacity: 1;
+  }
+
+  /* Better focus states for touch */
+  button:focus,
+  input:focus,
+  select:focus,
+  textarea:focus {
+    outline: 2px solid #4F46E5;
+    outline-offset: 2px;
+  }
+}
+
+/* High DPI display optimizations */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  /* Ensure sharp text rendering */
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+

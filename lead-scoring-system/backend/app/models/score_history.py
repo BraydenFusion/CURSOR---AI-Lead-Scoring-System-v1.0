@@ -1,6 +1,7 @@
 """Lead score history SQLAlchemy model definition."""
 
 from datetime import datetime
+from typing import Optional
 from uuid import uuid4
 
 from sqlalchemy import Column, DateTime, ForeignKey, Index, Integer, String
@@ -17,17 +18,17 @@ class LeadScoreHistory(Base):
 
     id: Mapped[uuid4] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     lead_id: Mapped[uuid4] = mapped_column(UUID(as_uuid=True), ForeignKey("leads.id", ondelete="CASCADE"))
-    old_score: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    new_score: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    old_classification: Mapped[str | None] = mapped_column(String(20), nullable=True)
-    new_classification: Mapped[str | None] = mapped_column(String(20), nullable=True)
-    trigger_activity_id: Mapped[uuid4 | None] = mapped_column(
+    old_score: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    new_score: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    old_classification: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    new_classification: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    trigger_activity_id: Mapped[Optional[uuid4]] = mapped_column(
         UUID(as_uuid=True), ForeignKey("lead_activities.id"), nullable=True
     )
     changed_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
     lead: Mapped["Lead"] = relationship("Lead", back_populates="score_history")
-    trigger_activity: Mapped["LeadActivity" | None] = relationship(
+    trigger_activity: Mapped[Optional["LeadActivity"]] = relationship(
         "LeadActivity", back_populates="trigger_for_scores"
     )
 

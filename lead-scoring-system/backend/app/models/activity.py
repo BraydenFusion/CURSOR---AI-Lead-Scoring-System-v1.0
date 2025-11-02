@@ -21,7 +21,9 @@ class LeadActivity(Base):
     activity_type: Mapped[str] = mapped_column(String(100), nullable=False)
     points_awarded: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     timestamp: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
-    metadata: Mapped[Dict[str, Any]] = mapped_column(JSONB, default=dict, nullable=False)
+    # Map to 'metadata' column using private attribute to avoid SQLAlchemy reserved name conflict
+    # Access via ._metadata in code
+    _metadata: Mapped[Dict[str, Any]] = mapped_column("metadata", JSONB, default=dict, nullable=False)
 
     lead: Mapped["Lead"] = relationship("Lead", back_populates="activities")
     trigger_for_scores: Mapped[list["LeadScoreHistory"]] = relationship(

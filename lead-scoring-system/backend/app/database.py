@@ -1,6 +1,5 @@
 """Database configuration and session management."""
 
-from contextlib import contextmanager
 from typing import Generator
 
 from sqlalchemy import create_engine
@@ -21,7 +20,6 @@ SessionLocal = scoped_session(
 Base = declarative_base()
 
 
-@contextmanager
 def get_db() -> Generator:
     """Provide a transactional scope around a series of operations."""
 
