@@ -28,7 +28,10 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title=settings.app_name,
     version="2.0.0",
-    debug=settings.environment == "development"
+    debug=settings.environment == "development",
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_url="/openapi.json"
 )
 
 # Configure rate limiting (optional - can be disabled in development)
