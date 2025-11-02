@@ -104,6 +104,19 @@ def test_endpoint():
     return {"message": "Test endpoint works!", "status": "ok"}
 
 
+@app.get("/docs-alias")
+def docs_alias():
+    """Alternative endpoint that redirects to docs."""
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/docs")
+
+
+@app.get("/api/openapi.json")
+def openapi_json_alias():
+    """Alternative OpenAPI endpoint."""
+    return app.openapi()
+
+
 @app.get("/debug/routes")
 def debug_routes():
     """Debug endpoint to list all available routes."""
