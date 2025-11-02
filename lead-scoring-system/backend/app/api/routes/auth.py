@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
@@ -66,6 +66,7 @@ def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
 @router.post("/login", response_model=Token)
 @rate_limit_decorator
 def login(
+    request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db),
 ):
