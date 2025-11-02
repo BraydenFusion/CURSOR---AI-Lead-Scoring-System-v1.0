@@ -25,13 +25,15 @@ settings = get_settings()
 setup_logging()
 logger = logging.getLogger(__name__)
 
+# Always enable docs, even in production (for Railway deployment)
+# If you want to disable in production, set docs_url=None conditionally
 app = FastAPI(
     title=settings.app_name,
     version="2.0.0",
     debug=settings.environment == "development",
-    docs_url="/docs",
-    redoc_url="/redoc",
-    openapi_url="/openapi.json"
+    docs_url="/docs",  # Explicitly enable Swagger UI
+    redoc_url="/redoc",  # Explicitly enable ReDoc
+    openapi_url="/openapi.json"  # Explicitly enable OpenAPI schema
 )
 
 # Configure rate limiting (optional - can be disabled in development)
@@ -96,6 +98,22 @@ async def health_check():
     }
 
 
+@app.get("/debug/routes")
+def debug_routes():
+    """Debug endpoint to list all available routes."""
+    routes = []
+    for route in app.routes:
+        if hasattr(route, 'path') and hasattr(route, 'methods'):
+            routes.append({
+                "path": route.path,
+                "methods": list(route.methods) if route.methods else []
+            })
+    return {
+        "routes": routes,
+        "total": len(routes)
+    }
+
+
 @app.on_event("startup")
 async def startup_event():
     """Startup event handler."""
@@ -103,6 +121,9 @@ async def startup_event():
     logger.info(f"Environment: {settings.railway_environment or settings.environment}")
     logger.info(f"Debug mode: {settings.environment == 'development'}")
     logger.info(f"Port: {settings.port}")
+    logger.info(f"API docs available at: /docs")
+    logger.info(f"ReDoc available at: /redoc")
+    logger.info(f"OpenAPI schema available at: /openapi.json")
 
 
 # Configure middleware
