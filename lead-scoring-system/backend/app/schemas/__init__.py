@@ -2,7 +2,15 @@
 
 from .lead import LeadCreate, LeadRead, LeadListResponse, LeadUpdate, LeadStatusUpdate
 from .activity import ActivityCreate, ActivityRead
-from .score import ScoreBreakdown, ScoreResponse
+from .score import (
+    ScoreBreakdown,
+    ScoreResponse,
+    AIScoreResponse,
+    InsightResponse,
+    PrioritizedLeadItem,
+    PrioritizedLeadsResponse,
+    ScoringAnalyticsResponse,
+)
 from .user import UserCreate, UserLogin, UserResponse, Token, TokenData
 from .assignment import AssignmentCreate, AssignmentResponse, AssignmentWithDetails
 from .note import NoteCreate, NoteResponse, NotificationResponse
@@ -17,6 +25,11 @@ __all__ = [
     "ActivityRead",
     "ScoreBreakdown",
     "ScoreResponse",
+    "AIScoreResponse",
+    "InsightResponse",
+    "PrioritizedLeadItem",
+    "PrioritizedLeadsResponse",
+    "ScoringAnalyticsResponse",
     "UserCreate",
     "UserLogin",
     "UserResponse",

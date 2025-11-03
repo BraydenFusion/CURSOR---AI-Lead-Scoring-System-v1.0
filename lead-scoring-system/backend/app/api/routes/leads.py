@@ -49,8 +49,13 @@ def create_lead(payload: LeadCreate, db: Session = Depends(get_db)) -> LeadRead:
         db.add(lead)
         db.flush()  # Flush to get the ID
 
-        # Calculate initial score
-        calculate_lead_score(lead.id, db)
+        # Calculate initial score using AI scoring (PRD)
+        try:
+            from ...services.ai_scoring import calculate_overall_score
+            calculate_overall_score(lead.id, db)
+        except Exception:
+            # Fallback to legacy scoring if AI scoring fails
+            calculate_lead_score(lead.id, db)
 
         # Refresh to get updated score
         db.refresh(lead)
