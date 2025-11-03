@@ -13,6 +13,8 @@ from .api import router as api_router
 from .middleware.rate_limit import configure_rate_limiting
 from .middleware.security_headers import SecurityHeadersMiddleware
 from .middleware.request_limits import RequestLimitsMiddleware
+from .middleware.connection_pool_monitor import ConnectionPoolMonitor
+from .middleware.circuit_breaker import CircuitBreakerMiddleware
 from .middleware.error_handler import (
     database_exception_handler,
     global_exception_handler,
@@ -111,7 +113,7 @@ def root():
 
 @app.get("/health")
 async def health_check():
-    """Health check endpoint with connection status."""
+    """Health check endpoint with connection status and capacity metrics."""
     health_status = {
         "status": "healthy",
         "environment": settings.railway_environment or settings.environment,
@@ -124,9 +126,25 @@ async def health_check():
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
         health_status["database"] = "connected"
+        
+        # Add connection pool metrics
+        pool = engine.pool
+        health_status["database_pool"] = {
+            "size": pool.size(),
+            "checked_in": pool.checkedin(),
+            "checked_out": pool.checkedout(),
+            "overflow": pool.overflow(),
+            "max_overflow": getattr(pool, "_max_overflow", 0),
+            "utilization_percent": round(
+                ((pool.checkedout() / (pool.size() + getattr(pool, "_max_overflow", 0))) * 100)
+                if (pool.size() + getattr(pool, "_max_overflow", 0)) > 0 else 0,
+                2
+            )
+        }
     except Exception as e:
         health_status["database"] = "disconnected"
         health_status["status"] = "degraded"
+        health_status["database_error"] = str(e)
         logger.warning(f"Database health check failed: {e}")
     
     return health_status
@@ -264,8 +282,10 @@ async def startup_event():
             logger.info(f"  {methods} {route.path}")
 
 
-# Configure middleware (order matters - add security first)
+# Configure middleware (order matters - add security and monitoring first)
 app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(CircuitBreakerMiddleware)  # Protect against cascade failures
+app.add_middleware(ConnectionPoolMonitor)    # Monitor connection pool usage
 app.add_middleware(RequestLimitsMiddleware)
 configure_cors(app)
 

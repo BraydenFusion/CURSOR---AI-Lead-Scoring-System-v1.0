@@ -37,15 +37,29 @@ if "localhost:5433" in DATABASE_URL or "127.0.0.1:5433" in DATABASE_URL:
     logger.warning("⚠️  Using default localhost database URL - DATABASE_URL environment variable may not be set!")
     logger.warning("⚠️  Please ensure PostgreSQL service is connected to backend service in Railway")
 
-# Create engine with Railway-optimized settings
+# Create engine with Railway-optimized settings for high capacity
+# Increased pool sizes for better load handling
 engine = create_engine(
     DATABASE_URL,
     echo=False,
     future=True,
-    pool_pre_ping=True,  # Verify connections before using
-    pool_recycle=3600,   # Recycle connections after 1 hour
-    pool_size=10,        # Railway handles this well
-    max_overflow=20
+    pool_pre_ping=True,        # Verify connections before using (prevents stale connections)
+    pool_recycle=3600,         # Recycle connections after 1 hour (prevents timeout errors)
+    pool_size=20,              # Increased base pool size for higher capacity (was 10)
+    max_overflow=40,           # Increased overflow for burst traffic (was 20)
+    pool_timeout=30,           # Timeout waiting for connection from pool (seconds)
+    connect_args={
+        "connect_timeout": 10,  # Connection timeout (seconds)
+        "keepalives": 1,        # Enable TCP keepalives
+        "keepalives_idle": 600, # Start keepalives after 10 minutes idle
+        "keepalives_interval": 30,  # Send keepalives every 30 seconds
+        "keepalives_count": 5,  # Max keepalive packets before considering dead
+    },
+    # Add query timeout to prevent long-running queries from blocking
+    execution_options={
+        "autocommit": False,
+        "isolation_level": "READ COMMITTED",  # Lower isolation for better concurrency
+    }
 )
 
 SessionLocal = scoped_session(
@@ -56,10 +70,14 @@ Base = declarative_base()
 
 
 def get_db() -> Generator:
-    """Provide a transactional scope around a series of operations."""
-
+    """Provide a transactional scope around a series of operations with error recovery."""
     db = SessionLocal()
     try:
         yield db
+        db.commit()  # Explicit commit for better transaction control
+    except Exception as e:
+        db.rollback()  # Rollback on any error
+        logger.error(f"Database transaction error: {e}")
+        raise
     finally:
         db.close()
