@@ -17,9 +17,9 @@ class UserBase(BaseModel):
 
 
 class UserCreate(UserBase):
-    """Schema for creating a new user."""
+    """Schema for creating a new user with high security password requirements."""
 
-    password: str = Field(..., min_length=8, max_length=100)
+    password: str = Field(..., min_length=12, max_length=128, description="Password must be at least 12 characters with uppercase, lowercase, number, and special character")
     role: UserRole = UserRole.SALES_REP
 
 

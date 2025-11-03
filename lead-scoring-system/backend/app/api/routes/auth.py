@@ -17,6 +17,11 @@ from app.utils.auth import (
     verify_password,
     verify_password_reset_token,
 )
+from app.utils.password_security import (
+    validate_password_strength,
+    check_password_breach,
+    PasswordSecurityError,
+)
 from app.services.email_service import email_service
 from pydantic import BaseModel, EmailStr, Field
 
@@ -34,7 +39,22 @@ router = APIRouter()
 
 @router.post("/register", response_model=UserResponse, status_code=201)
 def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
-    """Register a new user."""
+    """Register a new user with high security password validation."""
+    # HIGH SECURITY: Validate password strength
+    is_valid, error_msg = validate_password_strength(user_data.password)
+    if not is_valid:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Password security requirement not met: {error_msg}",
+        )
+    
+    # HIGH SECURITY: Check if password appears in breach database
+    if check_password_breach(user_data.password):
+        raise HTTPException(
+            status_code=400,
+            detail="This password has been found in data breaches. Please choose a different password.",
+        )
+    
     # Check if user exists
     existing_user = db.query(User).filter(
         (User.email == user_data.email) | (User.username == user_data.username)
@@ -46,7 +66,7 @@ def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
             detail="User with this email or username already exists",
         )
 
-    # Create user
+    # Create user with secure password hashing
     hashed_password = get_password_hash(user_data.password)
     new_user = User(
         email=user_data.email,
@@ -188,7 +208,7 @@ Lead Scoring System""",
 
 @router.post("/reset-password")
 async def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db)):
-    """Reset password using token."""
+    """Reset password using token with high security validation."""
     email = verify_password_reset_token(request.token)
 
     if not email:
@@ -199,7 +219,22 @@ async def reset_password(request: ResetPasswordRequest, db: Session = Depends(ge
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # Update password
+    # HIGH SECURITY: Validate new password strength
+    is_valid, error_msg = validate_password_strength(request.new_password)
+    if not is_valid:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Password security requirement not met: {error_msg}",
+        )
+    
+    # HIGH SECURITY: Check if password appears in breach database
+    if check_password_breach(request.new_password):
+        raise HTTPException(
+            status_code=400,
+            detail="This password has been found in data breaches. Please choose a different password.",
+        )
+
+    # Update password with secure hashing
     user.hashed_password = get_password_hash(request.new_password)
     db.commit()
 

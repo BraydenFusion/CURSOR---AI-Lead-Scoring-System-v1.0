@@ -54,63 +54,54 @@ except Exception:
 
 
 def configure_cors(application: FastAPI) -> None:
-    """Configure CORS based on environment."""
+    """Configure CORS based on environment - ALWAYS allows Railway frontend domains."""
 
-    # Use settings for allowed origins (handles Railway environment)
-    allow_origins = settings.cors_origins
+    # Start with settings or defaults
+    allow_origins = list(settings.cors_origins) if settings.cors_origins else []
     
-    # In development, allow all if no specific origins set
-    if settings.environment != "production" and not allow_origins:
-        allow_origins = ["*"]
+    # CRITICAL: Always add Railway frontend domain explicitly
+    railway_frontend_domains = [
+        "https://frontend-production-e9b2.up.railway.app",
+        "https://cursor-ai-lead-scoring-system-v10-production-8d7f.up.railway.app",
+    ]
     
-    # Filter out wildcard in production
+    # Add from environment if available
+    railway_frontend = os.getenv("RAILWAY_PUBLIC_DOMAIN") or os.getenv("FRONTEND_URL")
+    if railway_frontend:
+        if not railway_frontend.startswith("http"):
+            railway_frontend = f"https://{railway_frontend}"
+        if railway_frontend not in railway_frontend_domains:
+            railway_frontend_domains.append(railway_frontend)
+    
+    # Always add Railway frontend domains (remove wildcards and duplicates)
+    for domain in railway_frontend_domains:
+        if domain not in allow_origins:
+            allow_origins.append(domain)
+    
+    # Remove wildcards in production
     if settings.environment == "production" or settings.railway_environment:
         allow_origins = [origin for origin in allow_origins if origin != "*"]
-        
-        # Add Railway frontend domain if not already present
-        # This handles cases where ALLOWED_ORIGINS isn't set
-        railway_frontend = os.getenv("RAILWAY_PUBLIC_DOMAIN") or os.getenv("FRONTEND_URL")
-        if railway_frontend:
-            if not railway_frontend.startswith("http"):
-                railway_frontend = f"https://{railway_frontend}"
-            if railway_frontend not in allow_origins:
-                allow_origins.append(railway_frontend)
-        
-        # If still empty after processing, add common Railway patterns as fallback
-        if not allow_origins:
-            # Try to infer from environment or use a more permissive fallback
-            logger.warning("⚠️  No CORS origins configured, using fallback")
-            allow_origins = [
-                "https://frontend-production-e9b2.up.railway.app",
-                "https://cursor-ai-lead-scoring-system-v10-production-8d7f.up.railway.app",
-                "http://localhost:5173",  # Local dev fallback
-            ]
-        
-        # Always allow Railway frontend domains (dynamic pattern matching)
-        # Railway domains follow pattern: *.up.railway.app
-        # Add a more permissive pattern for Railway deployments
-        railway_pattern_added = any(".up.railway.app" in origin for origin in allow_origins)
-        if not railway_pattern_added:
-            # Add wildcard pattern for Railway - but FastAPI doesn't support wildcards
-            # So we'll add common Railway frontend patterns
-            logger.info("Adding Railway frontend domain patterns to CORS")
-            allow_origins.extend([
-                "https://frontend-production-e9b2.up.railway.app",
-                "https://*.up.railway.app",  # Note: This won't work in FastAPI, but we'll handle it manually
-            ])
     
-    logger.info(f"CORS allowed origins: {allow_origins}")
+    # Add localhost for development
+    if settings.environment != "production":
+        if "http://localhost:5173" not in allow_origins:
+            allow_origins.append("http://localhost:5173")
+    
+    logger.info(f"🌐 CORS Configuration:")
+    logger.info(f"   Allowed origins: {allow_origins}")
+    logger.info(f"   Regex pattern: https://.*\\.up\\.railway\\.app")
     
     # Use FastAPI's built-in CORS middleware
-    # For Railway, we allow all .up.railway.app domains
-    # FastAPI doesn't support wildcards, so we filter dynamically
+    # CRITICAL: Use both explicit origins AND regex pattern for Railway
     application.add_middleware(
         CORSMiddleware,
-        allow_origins=allow_origins,
-        allow_origin_regex=r"https://.*\.up\.railway\.app",  # Allow all Railway domains
+        allow_origins=allow_origins,  # Explicit origins
+        allow_origin_regex=r"https://.*\.up\.railway\.app",  # Allow ALL Railway domains via regex
         allow_credentials=True,
-        allow_methods=["*"],
+        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
         allow_headers=["*"],
+        expose_headers=["*"],
+        max_age=3600,  # Cache preflight for 1 hour
     )
 
 
