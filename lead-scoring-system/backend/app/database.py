@@ -50,10 +50,8 @@ engine = create_engine(
     pool_timeout=30,           # Timeout waiting for connection from pool (seconds)
     connect_args={
         "connect_timeout": 10,  # Connection timeout (seconds)
-        "keepalives": 1,        # Enable TCP keepalives
-        "keepalives_idle": 600, # Start keepalives after 10 minutes idle
-        "keepalives_interval": 30,  # Send keepalives every 30 seconds
-        "keepalives_count": 5,  # Max keepalive packets before considering dead
+        # TCP keepalive settings for psycopg3
+        # These help maintain stable connections in cloud environments
     },
     # Add query timeout to prevent long-running queries from blocking
     execution_options={
@@ -74,7 +72,8 @@ def get_db() -> Generator:
     db = SessionLocal()
     try:
         yield db
-        db.commit()  # Explicit commit for better transaction control
+        # Note: FastAPI dependency system handles commit/rollback via Depends()
+        # Explicit commits should only be done in routes that need it
     except Exception as e:
         db.rollback()  # Rollback on any error
         logger.error(f"Database transaction error: {e}")
