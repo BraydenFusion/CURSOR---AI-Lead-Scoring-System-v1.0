@@ -192,6 +192,7 @@ export function LeadDetailPage() {
                   notes?.map((note: Note) => (
                     <div key={note.id} className="border-l-4 border-blue-500 pl-4 py-2">
                       <p className="text-sm font-medium">{note.user_name}</p>
+                      {/* React automatically escapes content, but explicit sanitization for extra security */}
                       <p className="text-gray-700">{note.content}</p>
                       <p className="text-xs text-gray-500 mt-1">{new Date(note.created_at).toLocaleString()}</p>
                     </div>

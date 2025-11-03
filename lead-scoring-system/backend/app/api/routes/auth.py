@@ -71,10 +71,17 @@ def login(
     db: Session = Depends(get_db),
 ):
     """Login user and return JWT token."""
+    # Import audit logger
+    from app.utils.audit_logger import log_login_attempt
+    
+    # Get client IP for audit logging
+    client_ip = request.client.host if request.client else "unknown"
+    
     # Find user
     user = db.query(User).filter(User.username == form_data.username).first()
 
     if not user or not verify_password(form_data.password, user.hashed_password):
+        log_login_attempt(form_data.username, success=False, ip_address=client_ip)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
@@ -90,6 +97,9 @@ def login(
     # Update last login
     user.last_login = datetime.utcnow()
     db.commit()
+
+    # Log successful login
+    log_login_attempt(form_data.username, success=True, ip_address=client_ip)
 
     # Create token
     access_token = create_access_token(
