@@ -1,7 +1,7 @@
 # 📊 System Status & Roadmap
 
-**Last Updated:** 2025-11-03 14:15 UTC  
-**Version:** 2.0.1  
+**Last Updated:** 2025-11-03 14:30 UTC  
+**Version:** 2.0.2  
 **Status:** 🟡 In Production - Database Connection Issue (DNS Resolution Failure - Enhanced Diagnostics Added)
 
 ---
@@ -217,11 +217,26 @@
 - **API Timeout:** 30 seconds (frontend)
 
 ### Monitoring Endpoints
+- `/` - Root endpoint (returns system info)
 - `/health` - Health check with database pool metrics and error diagnostics
   - Now includes `error_type` and `error_message` when database is disconnected
   - Error types: `dns_resolution_failure`, `localhost_connection`, `connection_refused`
+- `/api` - API information endpoint (lists available endpoints)
 - `/debug/database-url` - DATABASE_URL configuration info (shows actual URL being used)
 - `/debug/routes` - List of all registered routes
+- `/docs` - Swagger UI documentation
+- `/redoc` - ReDoc documentation
+- `/openapi.json` - OpenAPI schema
+
+### API Endpoints (under `/api` prefix)
+- `/api/auth/login` - User login
+- `/api/auth/register` - User registration
+- `/api/auth/me` - Get current user info
+- `/api/leads` - Lead management (GET list, POST create)
+- `/api/leads/{id}` - Individual lead operations
+- `/api/assignments` - Lead assignment management
+- `/api/notes` - Lead notes management
+- `/api/notifications` - User notifications
 
 ---
 
@@ -354,9 +369,14 @@
 4. Monitor stability under normal load
 5. Document any new issues found
 
-## 📋 Recent Updates (v2.0.1)
+## 📋 Recent Updates
 
-**2025-11-03 14:15 UTC:**
+**v2.0.2 (2025-11-03 14:30 UTC):**
+- ✅ Added `/api` endpoint that returns API information and available endpoints
+- ✅ Fixed "Not Found" error when accessing `/api` directly
+- ✅ Updated SYSTEM_STATUS.md with complete endpoint documentation
+
+**v2.0.1 (2025-11-03 14:15 UTC):**
 - ✅ Added DNS resolution error detection to database error handler
 - ✅ Enhanced `/health` endpoint to include `error_type` and `error_message` fields
 - ✅ Improved startup logging with detailed DNS error diagnosis

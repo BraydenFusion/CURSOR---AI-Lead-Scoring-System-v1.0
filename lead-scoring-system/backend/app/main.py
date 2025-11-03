@@ -98,6 +98,25 @@ def configure_cors(application: FastAPI) -> None:
 def configure_routers(application: FastAPI) -> None:
     """Attach API routers to the application instance."""
 
+    @application.get("/api")
+    def api_info():
+        """API information endpoint."""
+        return {
+            "message": "Lead Scoring System API",
+            "version": "2.0.0",
+            "endpoints": {
+                "authentication": "/api/auth",
+                "leads": "/api/leads",
+                "assignments": "/api/assignments",
+                "notes": "/api/notes",
+                "notifications": "/api/notifications",
+                "health": "/health",
+                "docs": "/docs",
+                "openapi": "/openapi.json"
+            },
+            "base_path": "/api"
+        }
+
     application.include_router(api_router, prefix="/api")
 
 
