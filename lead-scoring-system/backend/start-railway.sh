@@ -3,7 +3,7 @@
 
 # Run database migrations on startup (Alembic checks if already applied, so safe)
 echo "🔄 Running database migrations..."
-alembic upgrade head || {
+cd /app && alembic upgrade head || {
     echo "⚠️  Migration check completed (may already be up to date)"
 }
 

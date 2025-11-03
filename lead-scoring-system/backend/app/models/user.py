@@ -40,7 +40,7 @@ class User(Base):
     # Relationships
     assigned_leads = relationship(
         "LeadAssignment",
-        primaryjoin="User.id == LeadAssignment.user_id",
+        primaryjoin="and_(User.id == LeadAssignment.user_id)",
         back_populates="user"
     )
 
