@@ -415,6 +415,13 @@
 
 ## 📋 Recent Updates
 
+**v2.1.1 (2025-11-03 18:00 UTC) - Railway Deployment Fixes:**
+- ✅ Fixed database connection using Railway Reference Variables
+- ✅ Fixed Alembic migration configuration (Dockerfile + startup script)
+- ✅ All services now properly networked under single project
+- ✅ Enhanced migration error handling and verification
+- 📄 See `DEPLOYMENT_FIX_SUMMARY.md` for complete details
+
 **v2.1.0 (2025-11-03 16:00 UTC) - Phase 1 AI Scoring Engine:**
 - ✅ Created database migration for AI scoring tables (lead_scores, lead_engagement_events, lead_insights)
 - ✅ Implemented enhanced AI scoring algorithms per PRD:
