@@ -29,14 +29,23 @@ class ConnectionPoolMonitor(BaseHTTPMiddleware):
                 )
                 
                 # Warn if pool is getting full
-                total_connections = pool.checkedout() + pool.checkedin()
-                max_connections = pool.size() + (pool._overflow or 0)
-                
-                if total_connections > max_connections * 0.8:
-                    logger.warning(
-                        f"⚠️  Connection pool usage high: "
-                        f"{total_connections}/{max_connections} connections in use"
-                    )
+                try:
+                    checked_out = pool.checkedout()
+                    checked_in = pool.checkedin()
+                    total_connections = checked_out + checked_in
+                    pool_size = pool.size()
+                    max_overflow = getattr(pool, "_max_overflow", 0) or getattr(pool, "_overflow", 0) or 0
+                    max_connections = pool_size + max_overflow
+                    
+                    if max_connections > 0 and total_connections > max_connections * 0.8:
+                        logger.warning(
+                            f"⚠️  Connection pool usage high: "
+                            f"{checked_out} checked out, {checked_in} checked in "
+                            f"({total_connections}/{max_connections} total)"
+                        )
+                except Exception as e:
+                    # Pool might not expose these attributes, ignore
+                    logger.debug(f"Could not read pool stats: {e}")
         except Exception as e:
             # Don't fail requests if monitoring fails
             logger.debug(f"Pool monitoring error (non-critical): {e}")
