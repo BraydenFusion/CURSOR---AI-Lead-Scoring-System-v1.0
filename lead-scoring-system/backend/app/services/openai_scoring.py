@@ -196,7 +196,7 @@ def score_lead_with_openai(lead_id: UUID, db: Session) -> Tuple[Dict, List[Dict]
     # Analyze with OpenAI
     ai_result = analyze_lead_with_openai(context)
     
-        # Extract scores
+    # Extract scores
     score_data = {
         "overall_score": int(ai_result.get("overall_score", 0)),
         "engagement_score": int(ai_result.get("engagement_score", 0)),
