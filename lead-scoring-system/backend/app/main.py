@@ -855,6 +855,26 @@ async def startup_event():
         if hasattr(route, 'path'):
             methods = list(route.methods) if hasattr(route, 'methods') and route.methods else []
             logger.info(f"  {methods} {route.path}")
+        
+        # Verify auth routes are registered
+        auth_routes = [r for r in app.routes if hasattr(r, 'path') and '/auth' in r.path]
+        if auth_routes:
+            logger.info(f"✅ Auth routes registered: {len(auth_routes)} routes")
+            for route in auth_routes[:5]:  # Show first 5
+                methods = list(route.methods) if hasattr(route, 'methods') and route.methods else []
+                logger.info(f"  Auth route: {methods} {route.path}")
+        else:
+            logger.error("❌ No auth routes found! This will cause 404 errors on login.")
+        
+        # Verify login route specifically
+        login_routes = [r for r in app.routes if hasattr(r, 'path') and '/login' in r.path]
+        if login_routes:
+            logger.info(f"✅ Login route found:")
+            for route in login_routes:
+                methods = list(route.methods) if hasattr(route, 'methods') and route.methods else []
+                logger.info(f"  Login: {methods} {route.path}")
+        else:
+            logger.error("❌ Login route not found! Check auth router registration.")
 
 
 # Configure middleware (order matters - add security and monitoring first)
