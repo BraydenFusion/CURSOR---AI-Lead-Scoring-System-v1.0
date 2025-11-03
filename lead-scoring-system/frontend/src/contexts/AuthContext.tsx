@@ -20,11 +20,29 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+// Get API URL from environment, ensuring proper format
+let apiBaseUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+
+// Ensure URL has protocol
+if (!apiBaseUrl.startsWith("http://") && !apiBaseUrl.startsWith("https://")) {
+  apiBaseUrl = `https://${apiBaseUrl}`;
+}
+
+// Ensure URL ends with /api
+if (!apiBaseUrl.endsWith("/api")) {
+  // Remove trailing slash if present
+  apiBaseUrl = apiBaseUrl.replace(/\/$/, "");
+  // Add /api if not present
+  if (!apiBaseUrl.endsWith("/api")) {
+    apiBaseUrl = `${apiBaseUrl}/api`;
+  }
+}
+
+const API_BASE_URL = apiBaseUrl;
 
 // Log API URL on module load for debugging
 console.log("🔗 AuthContext API Base URL:", API_BASE_URL);
-console.log("🔗 VITE_API_URL env var:", import.meta.env.VITE_API_URL);
+console.log("🔗 VITE_API_URL env var (raw):", import.meta.env.VITE_API_URL);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
