@@ -1,8 +1,8 @@
 # 📊 System Status & Roadmap
 
-**Last Updated:** 2025-11-03 15:30 UTC  
-**Version:** 2.0.4  
-**Status:** 🔴 CRITICAL - Database Disconnected (DNS Resolution Failure - Health Dashboard Confirmed Issue)
+**Last Updated:** 2025-11-03 16:00 UTC  
+**Version:** 2.1.0  
+**Status:** 🔴 CRITICAL - Database Disconnected (DNS Resolution Failure) | ✅ Phase 1 AI Scoring Complete
 
 ---
 
@@ -105,6 +105,9 @@ After fix, the health dashboard should show:
 - ✅ Connection pool monitoring
 - ✅ DNS error detection and diagnostics (specific error types in health check)
 - ✅ Enhanced database error messages with solution steps
+- ✅ **NEW:** AI-powered lead scoring engine with confidence levels
+- ✅ **NEW:** Engagement event tracking for real-time scoring updates
+- ✅ **NEW:** AI-generated insights and talking points
 
 ### Infrastructure & Deployment
 - ✅ Railway deployment configuration
@@ -180,6 +183,12 @@ After fix, the health dashboard should show:
    - Verify `DATABASE_URL` appears in Backend → Variables
    - **Expected Result:** Backend logs show Railway database URL (not localhost)
 
+2. **🔴 Run Database Migration for AI Scoring Tables**
+   - Once database is connected:
+   - Run: `alembic upgrade head` (or automatic on Railway startup)
+   - Creates tables: `lead_scores`, `lead_engagement_events`, `lead_insights`
+   - **Expected Result:** Migration completes successfully, new tables visible
+
 2. **🔴 Create Test Users**
    - Once database is connected:
      - Use Railway dashboard shell OR
@@ -188,13 +197,21 @@ After fix, the health dashboard should show:
    - **Expected Result:** Can login with test credentials
 
 ### Short Term (1-2 weeks)
-3. **🟠 Monitor Stability**
+3. **🟠 Test AI Scoring System**
+   - Once database is connected and migration run:
+   - Create a new lead via API - should auto-score
+   - Test `POST /api/leads/{id}/score` endpoint
+   - Test `GET /api/leads/prioritized` endpoint
+   - Verify insights are generated
+   - **Goal:** Confirm AI scoring works end-to-end
+
+4. **🟠 Monitor Stability**
    - Watch for crashes under load
    - Check connection pool utilization via `/health` endpoint
    - Monitor circuit breaker triggers
    - **Goal:** Ensure high capacity improvements are working
 
-4. **🔴 Database DNS Resolution Fix (URGENT)**
+5. **🔴 Database DNS Resolution Fix (URGENT)**
    - **Current Issue:** `"Name or service not known"` error on `/health`
    - **Action Steps:**
      1. Call backend `/debug/database-url` endpoint to see actual DATABASE_URL
@@ -261,9 +278,18 @@ After fix, the health dashboard should show:
 - `/api/auth/me` - Get current user info
 - `/api/leads` - Lead management (GET list, POST create)
 - `/api/leads/{id}` - Individual lead operations
+- `/api/leads/{id}/score` - **NEW:** AI score endpoint (GET legacy, POST enhanced AI)
+- `/api/leads/prioritized` - **NEW:** Get prioritized "Top 5 to Call Now" leads
 - `/api/assignments` - Lead assignment management
 - `/api/notes` - Lead notes management
 - `/api/notifications` - User notifications
+
+### New AI Scoring Endpoints (v2.1.0)
+- `POST /api/leads/{lead_id}/score` - Score a lead using AI engine
+  - Returns: engagement_score, buying_signal_score, demographic_score, priority_tier, confidence_level, insights
+- `GET /api/leads/prioritized?limit=5` - Get top prioritized leads for current user
+  - Returns: Leads sorted by score with insights and suggested talking points
+  - Role-based: Sales reps see only assigned leads, admins/managers see all
 
 ---
 
@@ -397,6 +423,20 @@ After fix, the health dashboard should show:
 5. Document any new issues found
 
 ## 📋 Recent Updates
+
+**v2.1.0 (2025-11-03 16:00 UTC) - Phase 1 AI Scoring Engine:**
+- ✅ Created database migration for AI scoring tables (lead_scores, lead_engagement_events, lead_insights)
+- ✅ Implemented enhanced AI scoring algorithms per PRD:
+  * Engagement Signals (35 points) - activity recency, email engagement, website behavior
+  * Buying Signals (40 points) - pricing views, calculators, urgency keywords, budget clarity
+  * Demographic Fit (25 points) - inventory match, budget alignment, repeat customers
+- ✅ Added confidence level calculation based on data completeness
+- ✅ Added AI insight generation for talking points, concerns, and opportunities
+- ✅ Created POST /api/leads/{lead_id}/score endpoint (PRD endpoint)
+- ✅ Created GET /api/leads/prioritized endpoint for "Top 5 to Call Now" list
+- ✅ Updated lead creation to automatically score with new AI system
+- ✅ Added comprehensive Pydantic schemas for AI scoring responses
+- ⚠️ **Pending:** Run database migration once DATABASE_URL is fixed
 
 **v2.0.4 (2025-11-03 15:30 UTC):**
 - ✅ Added user registration/signup functionality
