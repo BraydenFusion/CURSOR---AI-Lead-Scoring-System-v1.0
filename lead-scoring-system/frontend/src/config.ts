@@ -143,20 +143,32 @@ export async function initializeApiConfig(): Promise<void> {
   }
 }
 
-// Synchronous getter (returns cached or default)
+// Synchronous getter (returns cached or inferred immediately)
 export function getApiConfig(): { baseUrl: string } {
   if (!apiConfigCache) {
-    // Fallback to default during initialization
-    const defaultUrl = isRailwayProduction() 
-      ? inferBackendUrlFromRailway() || 'http://localhost:8000/api'
-      : 'http://localhost:8000/api';
+    // Synchronously infer URL (no async needed for initial load)
+    let defaultUrl: string;
+    
+    if (import.meta.env.VITE_API_URL) {
+      // Priority: Use build-time env var if available
+      defaultUrl = import.meta.env.VITE_API_URL;
+    } else if (isRailwayProduction()) {
+      // For Railway: Infer backend URL from frontend URL
+      const inferred = inferBackendUrlFromRailway();
+      defaultUrl = inferred ? `${inferred}/api` : 'http://localhost:8000/api';
+    } else {
+      // Development fallback
+      defaultUrl = 'http://localhost:8000/api';
+    }
     
     apiConfigCache = {
       baseUrl: formatApiUrl(defaultUrl),
     };
     
-    // Initialize async (for next time)
-    initializeApiConfig().catch(console.error);
+    // Optionally verify/refine async (non-blocking)
+    initializeApiConfig().catch(() => {
+      // Silently fail - we already have a working URL
+    });
   }
   
   return apiConfigCache;

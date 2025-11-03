@@ -1,8 +1,5 @@
 import axios from "axios";
-import { getApiConfig, initializeApiConfig } from "../config";
-
-// Initialize API config asynchronously
-initializeApiConfig().catch(console.error);
+import { getApiConfig } from "../config";
 
 const API_BASE_URL = getApiConfig().baseUrl;
 
