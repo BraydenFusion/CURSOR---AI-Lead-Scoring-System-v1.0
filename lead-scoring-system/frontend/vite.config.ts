@@ -9,9 +9,12 @@ export default defineConfig({
   preview: {
     port: parseInt(process.env.PORT || "5173"),
     host: "0.0.0.0",
-    // For Railway: Allow any host by not setting allowedHosts
-    // This should allow all hosts when combined with --host 0.0.0.0 in CLI
-    // If needed, add specific Railway domain: allowedHosts: ["your-domain.up.railway.app"]
+    // Allow Railway domain - Railway provides this via RAILWAY_PUBLIC_DOMAIN or use pattern
+    // This specific domain is from your current deployment
+    allowedHosts: [
+      "cursor-ai-lead-scoring-system-v10-production-8d7f.up.railway.app",
+      ".up.railway.app", // Try suffix pattern as fallback
+    ],
     strictPort: false,
   },
   build: {
