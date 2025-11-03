@@ -144,7 +144,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       // Re-throw with better message if it's a network error
       if (error instanceof TypeError && error.message.includes("fetch")) {
-        throw new Error("Network error: Cannot connect to backend. Please check VITE_API_URL configuration.");
+        const apiUrl = API_BASE_URL;
+        throw new Error(
+          `Network error: Cannot connect to backend at ${apiUrl}. ` +
+          `This could be a CORS issue or the backend may be down. ` +
+          `Check Railway deploy logs for backend service.`
+        );
       }
       
       throw error;
@@ -189,7 +194,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.error("Non-JSON error response:", text);
           
           if (response.status === 0 || response.status === 404) {
-            errorMessage = "Cannot connect to server. Please check that the backend is running and VITE_API_URL is configured correctly.";
+            errorMessage = `Cannot connect to server at ${API_BASE_URL}. Check that the backend is running and Railway deploy logs.`;
           } else {
             errorMessage = `Server error (${response.status}): ${response.statusText}`;
           }
@@ -216,7 +221,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       // Re-throw with better message if it's a network error
       if (error instanceof TypeError && error.message.includes("fetch")) {
-        throw new Error("Network error: Cannot connect to backend. Please check VITE_API_URL configuration.");
+        const apiUrl = API_BASE_URL;
+        throw new Error(
+          `Network error: Cannot connect to backend at ${apiUrl}. ` +
+          `This could be a CORS issue or the backend may be down. ` +
+          `Check Railway deploy logs for backend service.`
+        );
       }
       
       throw error;
