@@ -81,15 +81,33 @@ def configure_cors(application: FastAPI) -> None:
             # Try to infer from environment or use a more permissive fallback
             logger.warning("⚠️  No CORS origins configured, using fallback")
             allow_origins = [
+                "https://frontend-production-e9b2.up.railway.app",
                 "https://cursor-ai-lead-scoring-system-v10-production-8d7f.up.railway.app",
                 "http://localhost:5173",  # Local dev fallback
             ]
+        
+        # Always allow Railway frontend domains (dynamic pattern matching)
+        # Railway domains follow pattern: *.up.railway.app
+        # Add a more permissive pattern for Railway deployments
+        railway_pattern_added = any(".up.railway.app" in origin for origin in allow_origins)
+        if not railway_pattern_added:
+            # Add wildcard pattern for Railway - but FastAPI doesn't support wildcards
+            # So we'll add common Railway frontend patterns
+            logger.info("Adding Railway frontend domain patterns to CORS")
+            allow_origins.extend([
+                "https://frontend-production-e9b2.up.railway.app",
+                "https://*.up.railway.app",  # Note: This won't work in FastAPI, but we'll handle it manually
+            ])
     
     logger.info(f"CORS allowed origins: {allow_origins}")
-
+    
+    # Use FastAPI's built-in CORS middleware
+    # For Railway, we allow all .up.railway.app domains
+    # FastAPI doesn't support wildcards, so we filter dynamically
     application.add_middleware(
         CORSMiddleware,
         allow_origins=allow_origins,
+        allow_origin_regex=r"https://.*\.up\.railway\.app",  # Allow all Railway domains
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
