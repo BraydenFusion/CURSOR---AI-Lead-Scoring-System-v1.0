@@ -1,5 +1,6 @@
 """FastAPI application entry point for the lead scoring backend."""
 
+import os
 from datetime import datetime
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
@@ -60,11 +61,26 @@ def configure_cors(application: FastAPI) -> None:
         allow_origins = ["*"]
     
     # Filter out wildcard in production
-    if settings.environment == "production":
+    if settings.environment == "production" or settings.railway_environment:
         allow_origins = [origin for origin in allow_origins if origin != "*"]
+        
+        # Add Railway frontend domain if not already present
+        # This handles cases where ALLOWED_ORIGINS isn't set
+        railway_frontend = os.getenv("RAILWAY_PUBLIC_DOMAIN") or os.getenv("FRONTEND_URL")
+        if railway_frontend:
+            if not railway_frontend.startswith("http"):
+                railway_frontend = f"https://{railway_frontend}"
+            if railway_frontend not in allow_origins:
+                allow_origins.append(railway_frontend)
+        
+        # If still empty after processing, add common Railway patterns as fallback
         if not allow_origins:
-            # Fallback to localhost if misconfigured
-            allow_origins = ["http://localhost:5173"]
+            # Try to infer from environment or use a more permissive fallback
+            logger.warning("⚠️  No CORS origins configured, using fallback")
+            allow_origins = [
+                "https://cursor-ai-lead-scoring-system-v10-production-8d7f.up.railway.app",
+                "http://localhost:5173",  # Local dev fallback
+            ]
     
     logger.info(f"CORS allowed origins: {allow_origins}")
 
@@ -167,37 +183,40 @@ async def startup_event():
     logger.info(f"ReDoc available at: {app.redoc_url}")
     logger.info(f"OpenAPI schema available at: {app.openapi_url}")
     
-    # Check database connection on startup
+    # Check database connection on startup (non-blocking)
     from app.database import engine, DATABASE_URL
     if "localhost:5433" in DATABASE_URL or "127.0.0.1:5433" in DATABASE_URL:
         if settings.environment == "production" or settings.railway_environment:
-            logger.error("=" * 80)
-            logger.error("🚨 CRITICAL: DATABASE_URL not configured!")
-            logger.error("=" * 80)
-            logger.error("Backend is trying to connect to localhost instead of Railway PostgreSQL.")
-            logger.error("")
-            logger.error("SOLUTION:")
-            logger.error("1. Go to Railway Dashboard → PostgreSQL Service")
-            logger.error("2. Click 'Connect Service' and select your Backend service")
-            logger.error("3. Railway will automatically set DATABASE_URL")
-            logger.error("")
-            logger.error("OR manually set in Backend Service → Variables:")
-            logger.error("  Name: DATABASE_URL")
-            logger.error("  Value: [Copy from PostgreSQL Service → Variables → DATABASE_URL]")
-            logger.error("=" * 80)
+            logger.warning("=" * 80)
+            logger.warning("⚠️  WARNING: DATABASE_URL not configured!")
+            logger.warning("=" * 80)
+            logger.warning("Backend is trying to connect to localhost instead of Railway PostgreSQL.")
+            logger.warning("Backend will start but database operations will fail.")
+            logger.warning("")
+            logger.warning("SOLUTION:")
+            logger.warning("1. Go to Railway Dashboard → PostgreSQL Service")
+            logger.warning("2. Click 'Connect Service' and select your Backend service")
+            logger.warning("3. Railway will automatically set DATABASE_URL")
+            logger.warning("")
+            logger.warning("OR manually set in Backend Service → Variables:")
+            logger.warning("  Name: DATABASE_URL")
+            logger.warning("  Value: [Copy from PostgreSQL Service → Variables → DATABASE_URL]")
+            logger.warning("=" * 80)
     
-    # Test database connection
+    # Test database connection (non-blocking - don't fail startup)
     try:
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
         logger.info("✅ Database connection successful")
     except Exception as e:
         if "localhost:5433" in DATABASE_URL or "127.0.0.1:5433" in DATABASE_URL:
-            logger.error(f"❌ Database connection failed: {str(e)}")
-            logger.error("This is because DATABASE_URL is not set. See instructions above.")
+            logger.warning(f"⚠️  Database connection failed: {str(e)}")
+            logger.warning("Backend will continue starting but database features won't work.")
+            logger.warning("Connect PostgreSQL service to Backend service in Railway to fix this.")
         else:
-            logger.error(f"❌ Database connection failed: {str(e)}")
-            logger.error("Please check your DATABASE_URL configuration.")
+            logger.warning(f"⚠️  Database connection failed: {str(e)}")
+            logger.warning("Please check your DATABASE_URL configuration.")
+        # Don't raise - allow backend to start even without database
     
     # Log all registered routes for debugging
     logger.info("Registered routes:")
