@@ -25,40 +25,87 @@ class Settings(BaseSettings):
     database_url_str: str = Field(
         default="",
         description="Database URL from environment (Railway compatible).",
+        validation_alias="DATABASE_URL",  # Pydantic alias to read from DATABASE_URL env var
     )
 
     @property
     def database_url(self) -> str:
         """Get database URL, handling Railway's postgres:// format."""
-        url = os.getenv("DATABASE_URL", self.database_url_str)
-        
-        # Log what we got from environment
         import logging
         logger = logging.getLogger(__name__)
+        
+        # Debug: Check all possible sources
+        logger.info("=" * 60)
+        logger.info("🔍 DATABASE_URL Debug Information:")
+        logger.info(f"   os.getenv('DATABASE_URL'): {bool(os.getenv('DATABASE_URL'))}")
+        logger.info(f"   self.database_url_str: {bool(self.database_url_str)}")
+        logger.info(f"   Type of database_url_str: {type(self.database_url_str)}")
+        
+        # Try multiple sources (Railway might use different env var names)
+        url = (
+            os.getenv("DATABASE_URL") or
+            os.getenv("POSTGRES_URL") or
+            os.getenv("PGDATABASE") or
+            os.getenv("POSTGRES_DATABASE_URL") or
+            (self.database_url_str if self.database_url_str else None)
+        )
+        
+        if url:
+            logger.info(f"   Found URL from: {self._get_url_source(url)}")
+            logger.info(f"   URL length: {len(url)}")
+            logger.info(f"   URL starts with: {url[:20]}..." if len(url) > 20 else f"   URL: {url}")
+        else:
+            logger.warning("   No URL found in any source!")
+        
+        logger.info("=" * 60)
         
         # Check if it's a Railway variable reference (not resolved)
         if url and url.startswith("${{"):
             logger.error(f"⚠️  DATABASE_URL appears to be an unresolved Railway reference: {url}")
             logger.error("⚠️  This means the variable reference is not resolving!")
-            logger.error("⚠️  Try using 'Connect Service' instead of variable references")
+            logger.error("⚠️  Railway variable references sometimes don't work.")
+            logger.error("⚠️  SOLUTION: Manually copy the DATABASE_URL value from PostgreSQL service → Variables")
             # Fall back to default
             url = None
         
-        if not url:
+        if not url or url.strip() == "":
             url = "postgresql+psycopg://postgres:postgres@localhost:5433/lead_scoring"
             logger.warning(f"⚠️  No DATABASE_URL found, using default: {url}")
+            logger.warning("⚠️  TO FIX: Set DATABASE_URL in Railway Backend Service → Variables")
+            logger.warning("⚠️  Copy the value from PostgreSQL Service → Variables → DATABASE_URL")
         else:
-            logger.info(f"✅ DATABASE_URL found in environment (length: {len(url)})")
+            logger.info(f"✅ DATABASE_URL found (length: {len(url)})")
         
         # Railway provides postgres:// but SQLAlchemy needs postgresql://
+        original_url = url
         if url.startswith("postgres://"):
             url = url.replace("postgres://", "postgresql+psycopg://", 1)
+            logger.info("   Converted postgres:// to postgresql+psycopg://")
         elif url.startswith("postgresql://"):
             # Ensure we use psycopg driver
             if "+psycopg" not in url:
                 url = url.replace("postgresql://", "postgresql+psycopg://", 1)
+                logger.info("   Added psycopg driver to postgresql://")
+        
+        if original_url != url:
+            logger.info(f"   Final URL format: {url[:30]}..." if len(url) > 30 else f"   Final URL: {url}")
         
         return url
+    
+    def _get_url_source(self, url: str) -> str:
+        """Determine which source provided the URL."""
+        if os.getenv("DATABASE_URL") == url:
+            return "DATABASE_URL env var"
+        elif os.getenv("POSTGRES_URL") == url:
+            return "POSTGRES_URL env var"
+        elif os.getenv("PGDATABASE") == url:
+            return "PGDATABASE env var"
+        elif os.getenv("POSTGRES_DATABASE_URL") == url:
+            return "POSTGRES_DATABASE_URL env var"
+        elif self.database_url_str == url:
+            return "database_url_str field"
+        else:
+            return "unknown source"
 
     redis_url: RedisDsn = Field(
         default="redis://localhost:6379/0",
