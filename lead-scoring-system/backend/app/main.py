@@ -278,6 +278,13 @@ def generate_health_dashboard(health_data: dict) -> str:
     error_message = health_data.get("error_message", "")
     database_error = health_data.get("database_error", "")
     
+    # Determine chart color based on utilization
+    chart_color = "#10b981"  # green
+    if utilization_percent > 80:
+        chart_color = "#ef4444"  # red
+    elif utilization_percent > 50:
+        chart_color = "#f59e0b"  # amber
+    
     html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -619,7 +626,7 @@ def generate_health_dashboard(health_data: dict) -> str:
                 datasets: [{{
                     data: [{checked_out}, {total_available - checked_out}],
                     backgroundColor: [
-                        '{'#ef4444' if utilization_percent > 80 else '#f59e0b' if utilization_percent > 50 else '#10b981'}',
+                        '{chart_color}',
                         '#e5e7eb'
                     ],
                     borderWidth: 0
