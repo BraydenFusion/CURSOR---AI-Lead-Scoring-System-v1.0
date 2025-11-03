@@ -57,11 +57,20 @@ async def database_exception_handler(request: Request, exc: SQLAlchemyError) -> 
     """Handle database errors."""
     logger.error(f"Database error on {request.url.path}: {exc}", exc_info=True)
 
-    # Don't expose database errors in production
-    if settings.environment == "production":
+    error_str = str(exc)
+    
+    # Check if it's a connection error indicating DATABASE_URL not set
+    if "127.0.0.1" in error_str or "localhost:5433" in error_str or "Connection refused" in error_str:
+        detail = (
+            "Database connection error: Backend cannot connect to database. "
+            "Please ensure PostgreSQL service is connected to backend service in Railway, "
+            "or DATABASE_URL environment variable is set correctly."
+        )
+        logger.error("⚠️  DATABASE_URL appears to not be set - backend is using localhost default")
+    elif settings.environment == "production":
         detail = "A database error occurred. Please try again later."
     else:
-        detail = f"Database error: {str(exc)}"
+        detail = f"Database error: {error_str}"
 
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

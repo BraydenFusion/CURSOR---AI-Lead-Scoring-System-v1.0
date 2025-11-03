@@ -1,13 +1,17 @@
 """FastAPI application entry point for the lead scoring backend."""
 
+from datetime import datetime
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import text
 
 from .api import router as api_router
 from .middleware.rate_limit import configure_rate_limiting
+from .middleware.security_headers import SecurityHeadersMiddleware
+from .middleware.request_limits import RequestLimitsMiddleware
 from .middleware.error_handler import (
     database_exception_handler,
     global_exception_handler,
@@ -91,11 +95,25 @@ def root():
 
 @app.get("/health")
 async def health_check():
-    """Health check endpoint."""
-    return {
+    """Health check endpoint with connection status."""
+    health_status = {
         "status": "healthy",
-        "environment": settings.railway_environment or settings.environment
+        "environment": settings.railway_environment or settings.environment,
+        "timestamp": datetime.utcnow().isoformat(),
     }
+    
+    # Check database connection
+    try:
+        from app.database import engine
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        health_status["database"] = "connected"
+    except Exception as e:
+        health_status["database"] = "disconnected"
+        health_status["status"] = "degraded"
+        logger.warning(f"Database health check failed: {e}")
+    
+    return health_status
 
 
 @app.get("/test")
@@ -149,6 +167,38 @@ async def startup_event():
     logger.info(f"ReDoc available at: {app.redoc_url}")
     logger.info(f"OpenAPI schema available at: {app.openapi_url}")
     
+    # Check database connection on startup
+    from app.database import engine, DATABASE_URL
+    if "localhost:5433" in DATABASE_URL or "127.0.0.1:5433" in DATABASE_URL:
+        if settings.environment == "production" or settings.railway_environment:
+            logger.error("=" * 80)
+            logger.error("🚨 CRITICAL: DATABASE_URL not configured!")
+            logger.error("=" * 80)
+            logger.error("Backend is trying to connect to localhost instead of Railway PostgreSQL.")
+            logger.error("")
+            logger.error("SOLUTION:")
+            logger.error("1. Go to Railway Dashboard → PostgreSQL Service")
+            logger.error("2. Click 'Connect Service' and select your Backend service")
+            logger.error("3. Railway will automatically set DATABASE_URL")
+            logger.error("")
+            logger.error("OR manually set in Backend Service → Variables:")
+            logger.error("  Name: DATABASE_URL")
+            logger.error("  Value: [Copy from PostgreSQL Service → Variables → DATABASE_URL]")
+            logger.error("=" * 80)
+    
+    # Test database connection
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        logger.info("✅ Database connection successful")
+    except Exception as e:
+        if "localhost:5433" in DATABASE_URL or "127.0.0.1:5433" in DATABASE_URL:
+            logger.error(f"❌ Database connection failed: {str(e)}")
+            logger.error("This is because DATABASE_URL is not set. See instructions above.")
+        else:
+            logger.error(f"❌ Database connection failed: {str(e)}")
+            logger.error("Please check your DATABASE_URL configuration.")
+    
     # Log all registered routes for debugging
     logger.info("Registered routes:")
     for route in app.routes:
@@ -157,7 +207,9 @@ async def startup_event():
             logger.info(f"  {methods} {route.path}")
 
 
-# Configure middleware
+# Configure middleware (order matters - add security first)
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(RequestLimitsMiddleware)
 configure_cors(app)
 
 # Register exception handlers
