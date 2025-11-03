@@ -1,8 +1,27 @@
 # 📊 System Status & Roadmap
 
-**Last Updated:** 2025-11-03  
+**Last Updated:** 2025-11-03 14:00 UTC  
 **Version:** 2.0.0  
-**Status:** 🟡 In Production - Stable with Known Issues
+**Status:** 🟡 In Production - Database Connection Issue (DNS Resolution Failure)
+
+---
+
+## 🚨 Current Issue (Active)
+
+**Error:** Database DNS resolution failure  
+**Health Check:** `{"database": "disconnected", "database_error": "[Errno -2] Name or service not known"}`  
+**Diagnosis:**
+1. ✅ Check `/debug/database-url` endpoint to see what DATABASE_URL is being used
+2. ✅ Verify DATABASE_URL in Railway Backend → Variables
+3. ✅ Ensure DATABASE_URL is a direct URL (not `${{ Postgres.DATABASE_URL }}`)
+4. ✅ Confirm PostgreSQL service is running
+
+**Quick Fix:**
+- Go to Railway Dashboard → PostgreSQL Service → Variables
+- Copy the `DATABASE_URL` value
+- Go to Railway Dashboard → Backend Service → Variables
+- Set `DATABASE_URL` = [paste copied value]
+- Redeploy backend service
 
 ---
 
@@ -79,11 +98,20 @@
 ## 🟡 Known Issues & Limitations
 
 ### Database Connection
-- ⚠️ **CRITICAL:** DATABASE_URL not consistently set in Railway
-  - **Status:** Backend trying to connect to localhost (127.0.0.1:5433)
+- ⚠️ **CRITICAL:** DATABASE_URL DNS resolution failure
+  - **Status:** Health check shows `"database": "disconnected"` with error: `"Name or service not known"`
+  - **Current Error:** DNS cannot resolve the database hostname in DATABASE_URL
   - **Impact:** All database operations fail (login, lead management, etc.)
   - **Workaround:** Backend starts but database features don't work
-  - **Fix Required:** Connect PostgreSQL service to Backend service in Railway dashboard
+  - **Diagnosis Steps:**
+    1. Check `/debug/database-url` endpoint to see actual DATABASE_URL value
+    2. Verify DATABASE_URL is set in Railway Backend → Variables
+    3. Check if DATABASE_URL contains a valid Railway PostgreSQL hostname
+    4. Ensure PostgreSQL service is running and accessible
+  - **Fix Required:** 
+    - Option 1: Use Railway "Connect Service" feature (PostgreSQL → Backend)
+    - Option 2: Manually copy DATABASE_URL from PostgreSQL → Variables and paste into Backend → Variables
+    - Verify DATABASE_URL hostname resolves (should be a Railway internal hostname)
   - **Priority:** 🔴 HIGHEST
 
 ### Testing Users
@@ -124,11 +152,20 @@
    - Monitor circuit breaker triggers
    - **Goal:** Ensure high capacity improvements are working
 
-4. **🟠 Database Connection Debugging**
-   - If connection issues persist:
-     - Use `/debug/database-url` endpoint
-     - Check backend deploy logs for detailed DATABASE_URL info
-     - Verify Railway service connections
+4. **🔴 Database DNS Resolution Fix (URGENT)**
+   - **Current Issue:** `"Name or service not known"` error on `/health`
+   - **Action Steps:**
+     1. Call backend `/debug/database-url` endpoint to see actual DATABASE_URL
+     2. Check Railway Backend → Variables → DATABASE_URL
+     3. If missing or invalid:
+        - Go to PostgreSQL → Variables → DATABASE_URL
+        - Copy the full URL (should be `postgresql://...` or `postgres://...`)
+        - Paste into Backend → Variables → DATABASE_URL
+        - Ensure no `${{ }}` variable references
+     4. Verify PostgreSQL service is running
+     5. Redeploy backend service
+     6. Test `/health` endpoint again
+   - **Expected Result:** `/health` shows `"database": "connected"`
 
 5. **🟡 Performance Optimization**
    - Monitor database query performance
@@ -220,9 +257,44 @@
 4. Review circuit breaker status
 
 ### Database Connection Errors
-**Symptoms:** "connection to server at 127.0.0.1:5433 failed"  
-**Cause:** DATABASE_URL not set in Railway  
+
+#### Error 1: "connection to server at 127.0.0.1:5433 failed"
+**Symptoms:** Health check shows connection refused to localhost  
+**Cause:** DATABASE_URL not set in Railway, using default localhost  
 **Solution:** Connect PostgreSQL service to Backend service in Railway dashboard
+
+#### Error 2: "Name or service not known" (DNS Resolution Failure)
+**Symptoms:** Health check shows `"database_error": "[Errno -2] Name or service not known"`  
+**Cause:** DATABASE_URL hostname cannot be resolved (DNS failure)  
+**Diagnosis:**
+1. Call `/debug/database-url` endpoint to see actual DATABASE_URL
+2. Check if DATABASE_URL contains invalid/unresolvable hostname
+3. Verify PostgreSQL service is running in Railway dashboard
+4. Check backend deploy logs for DATABASE_URL value and source
+
+**Solutions:**
+1. **If DATABASE_URL is missing or using localhost:**
+   - Railway Dashboard → PostgreSQL Service → Variables
+   - Copy `DATABASE_URL` value
+   - Railway Dashboard → Backend Service → Variables
+   - Add/Update: `DATABASE_URL` = [paste value]
+   - Redeploy backend
+
+2. **If DATABASE_URL contains `${{ Postgres.DATABASE_URL }}`:**
+   - This is a Railway variable reference that may not resolve
+   - Instead: Copy the actual URL from PostgreSQL → Variables → DATABASE_URL
+   - Paste directly into Backend → Variables → DATABASE_URL
+   - Remove any `${{ }}` syntax
+
+3. **If DATABASE_URL hostname looks incorrect:**
+   - Railway PostgreSQL URLs should look like: `postgresql://user:pass@hostname:port/dbname`
+   - Hostname should be a Railway internal hostname (e.g., `*.railway.internal` or Railway-provided domain)
+   - If hostname looks wrong, reconnect services or copy fresh URL
+
+4. **If PostgreSQL service is stopped:**
+   - Railway Dashboard → PostgreSQL Service
+   - Ensure service is running (not paused/stopped)
+   - Restart if needed
 
 ### CORS Errors
 **Symptoms:** "No 'Access-Control-Allow-Origin' header"  
