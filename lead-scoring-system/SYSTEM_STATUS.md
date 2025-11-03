@@ -189,7 +189,7 @@ After fix, the health dashboard should show:
    - Creates tables: `lead_scores`, `lead_engagement_events`, `lead_insights`
    - **Expected Result:** Migration completes successfully, new tables visible
 
-2. **🔴 Create Test Users**
+3. **🔴 Create Test Users**
    - Once database is connected:
      - Use Railway dashboard shell OR
      - Use API endpoint: `POST /api/auth/register`
@@ -197,7 +197,7 @@ After fix, the health dashboard should show:
    - **Expected Result:** Can login with test credentials
 
 ### Short Term (1-2 weeks)
-3. **🟠 Test AI Scoring System**
+4. **🟠 Test AI Scoring System**
    - Once database is connected and migration run:
    - Create a new lead via API - should auto-score
    - Test `POST /api/leads/{id}/score` endpoint
@@ -205,13 +205,13 @@ After fix, the health dashboard should show:
    - Verify insights are generated
    - **Goal:** Confirm AI scoring works end-to-end
 
-4. **🟠 Monitor Stability**
+5. **🟠 Monitor Stability**
    - Watch for crashes under load
    - Check connection pool utilization via `/health` endpoint
    - Monitor circuit breaker triggers
    - **Goal:** Ensure high capacity improvements are working
 
-5. **🔴 Database DNS Resolution Fix (URGENT)**
+6. **🔴 Database DNS Resolution Fix (URGENT)**
    - **Current Issue:** `"Name or service not known"` error on `/health`
    - **Action Steps:**
      1. Call backend `/debug/database-url` endpoint to see actual DATABASE_URL
