@@ -20,7 +20,7 @@ from app.models.user import User, UserRole
 from app.utils.auth import get_password_hash
 from app.utils.password_security import validate_password_strength, check_password_breach
 
-def create_admin_user(username: str = "admin", password: str = "Admin123!@#Secure", email: str = "admin@example.com", full_name: str = "Admin User"):
+def create_admin_user(username: str = "admin", password: str = "AdminSecure123!@", email: str = "admin@example.com", full_name: str = "Admin User"):
     """Create admin user in database."""
     
     # High security: Validate password
@@ -105,7 +105,7 @@ def create_admin_user(username: str = "admin", password: str = "Admin123!@#Secur
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Create admin user")
     parser.add_argument("--username", default="admin", help="Admin username (default: admin)")
-    parser.add_argument("--password", default="Admin123!@#Secure", help="Admin password (default: Admin123!@#Secure)")
+    parser.add_argument("--password", default="AdminSecure123!@", help="Admin password (default: AdminSecure123!@)")
     parser.add_argument("--email", default="admin@example.com", help="Admin email (default: admin@example.com)")
     parser.add_argument("--full-name", default="Admin User", help="Admin full name (default: Admin User)")
     
@@ -114,8 +114,8 @@ if __name__ == "__main__":
     # For backward compatibility, allow admin123 if specified
     if args.password == "admin123":
         print("⚠️  WARNING: 'admin123' is too weak. Using default secure password.")
-        print("   Login with: admin / Admin123!@#Secure")
-        args.password = "Admin123!@#Secure"
+        print("   Login with: admin / AdminSecure123!@")
+        args.password = "AdminSecure123!@"
     
     success = create_admin_user(
         username=args.username,
