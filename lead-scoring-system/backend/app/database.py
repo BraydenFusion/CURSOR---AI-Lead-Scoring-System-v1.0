@@ -15,7 +15,27 @@ settings = get_settings()
 # Use the property that handles postgres:// to postgresql:// conversion
 DATABASE_URL = settings.database_url
 
+# Log database URL (masked for security)
+def mask_url(url: str) -> str:
+    """Mask sensitive parts of database URL for logging."""
+    if "@" in url:
+        parts = url.split("@")
+        if len(parts) == 2:
+            auth = parts[0]
+            host = parts[1]
+            if "://" in auth:
+                scheme = auth.split("://")[0]
+                masked = f"{scheme}://***:***@{host}"
+                return masked
+    return url
+
 logger.info(f"Connecting to database (Railway: {settings.railway_environment or 'local'})")
+logger.info(f"Database URL: {mask_url(DATABASE_URL)}")
+
+# Check if using default localhost URL (indicates DATABASE_URL not set)
+if "localhost:5433" in DATABASE_URL or "127.0.0.1:5433" in DATABASE_URL:
+    logger.warning("⚠️  Using default localhost database URL - DATABASE_URL environment variable may not be set!")
+    logger.warning("⚠️  Please ensure PostgreSQL service is connected to backend service in Railway")
 
 # Create engine with Railway-optimized settings
 engine = create_engine(
