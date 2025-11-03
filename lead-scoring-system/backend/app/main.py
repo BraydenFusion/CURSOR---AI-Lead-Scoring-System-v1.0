@@ -172,6 +172,44 @@ def debug_routes():
     }
 
 
+@app.get("/debug/database-url")
+def debug_database_url():
+    """Debug endpoint to show DATABASE_URL configuration."""
+    from app.database import DATABASE_URL
+    
+    # Check all possible sources
+    env_vars = {
+        "DATABASE_URL": os.getenv("DATABASE_URL"),
+        "POSTGRES_URL": os.getenv("POSTGRES_URL"),
+        "PGDATABASE": os.getenv("PGDATABASE"),
+        "POSTGRES_DATABASE_URL": os.getenv("POSTGRES_DATABASE_URL"),
+    }
+    
+    # Mask sensitive parts
+    def mask_url(url: str) -> str:
+        if not url:
+            return "not set"
+        if "@" in url:
+            parts = url.split("@")
+            if len(parts) == 2:
+                auth = parts[0]
+                host = parts[1]
+                if "://" in auth:
+                    scheme = auth.split("://")[0]
+                    masked = f"{scheme}://***:***@{host}"
+                    return masked
+        return url
+    
+    return {
+        "database_url_being_used": mask_url(DATABASE_URL),
+        "database_url_length": len(DATABASE_URL) if DATABASE_URL else 0,
+        "is_localhost": "localhost:5433" in DATABASE_URL or "127.0.0.1:5433" in DATABASE_URL,
+        "environment_variables": {k: bool(v) for k, v in env_vars.items()},
+        "railway_environment": settings.railway_environment,
+        "environment": settings.environment,
+    }
+
+
 @app.on_event("startup")
 async def startup_event():
     """Startup event handler."""
