@@ -9,10 +9,10 @@ export default defineConfig({
   preview: {
     port: parseInt(process.env.PORT || "5173"),
     host: "0.0.0.0",
-    // For Railway: Allow the specific Railway domain pattern
-    // Railway domains follow: *.up.railway.app
-    // Setting to empty array should disable host checking in Vite 5+
-    allowedHosts: [".up.railway.app"],
+    // For Railway: Allow any host by not setting allowedHosts
+    // This should allow all hosts when combined with --host 0.0.0.0 in CLI
+    // If needed, add specific Railway domain: allowedHosts: ["your-domain.up.railway.app"]
+    strictPort: false,
   },
   build: {
     sourcemap: true,
