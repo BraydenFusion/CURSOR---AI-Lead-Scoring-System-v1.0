@@ -93,16 +93,19 @@ def configure_cors(application: FastAPI) -> None:
     
     # Use FastAPI's built-in CORS middleware
     # CRITICAL: Use both explicit origins AND regex pattern for Railway
+    # CRITICAL: allow_origin_regex takes precedence over allow_origins for matching
     application.add_middleware(
         CORSMiddleware,
-        allow_origins=allow_origins,  # Explicit origins
-        allow_origin_regex=r"https://.*\.up\.railway\.app",  # Allow ALL Railway domains via regex
+        allow_origins=allow_origins,  # Explicit origins (fallback)
+        allow_origin_regex=r"https://.*\.up\.railway\.app",  # Allow ALL Railway domains via regex (PRIMARY)
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
         allow_headers=["*"],
         expose_headers=["*"],
         max_age=3600,  # Cache preflight for 1 hour
     )
+    
+    logger.info("✅ CORS middleware configured and added to application")
 
 
 def configure_routers(application: FastAPI) -> None:
@@ -869,11 +872,12 @@ async def startup_event():
 
 
 # Configure middleware (order matters - add security and monitoring first)
+# IMPORTANT: CORS must be added BEFORE SecurityHeadersMiddleware to avoid conflicts
+configure_cors(app)  # CORS first - before other middleware
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(CircuitBreakerMiddleware)  # Protect against cascade failures
 app.add_middleware(ConnectionPoolMonitor)    # Monitor connection pool usage
 app.add_middleware(RequestLimitsMiddleware)
-configure_cors(app)
 
 # Register exception handlers
 app.add_exception_handler(RequestValidationError, validation_exception_handler)

@@ -8,6 +8,12 @@ from .assignments import router as assignments_router
 from .notes import router as notes_router
 from .notifications import router as notifications_router
 
+# Import debug router if it exists
+try:
+    from .debug import router as debug_router
+except ImportError:
+    debug_router = None
+
 __all__ = [
     "leads_router",
     "activities_router",
@@ -17,3 +23,6 @@ __all__ = [
     "notes_router",
     "notifications_router",
 ]
+
+if debug_router:
+    __all__.append("debug_router")

@@ -12,6 +12,12 @@ from .routes import (
     scoring_router,
 )
 
+# Import debug router if it exists
+try:
+    from .routes import debug_router
+except ImportError:
+    debug_router = None
+
 
 router = APIRouter()
 
@@ -22,3 +28,7 @@ router.include_router(scoring_router, prefix="/leads", tags=["scoring"])
 router.include_router(assignments_router, prefix="/assignments", tags=["assignments"])
 router.include_router(notes_router, prefix="/notes", tags=["notes"])
 router.include_router(notifications_router, prefix="/notifications", tags=["notifications"])
+
+# Include debug router if available
+if debug_router:
+    router.include_router(debug_router, prefix="/debug", tags=["debug"])
