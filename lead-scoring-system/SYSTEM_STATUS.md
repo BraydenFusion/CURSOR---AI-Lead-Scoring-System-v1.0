@@ -1,56 +1,47 @@
 # 📊 System Status & Roadmap
 
-**Last Updated:** 2025-11-03 16:00 UTC  
-**Version:** 2.1.0  
-**Status:** 🔴 CRITICAL - Database Disconnected (DNS Resolution Failure) | ✅ Phase 1 AI Scoring Complete
+**Last Updated:** 2025-11-03 18:00 UTC  
+**Version:** 2.1.1  
+**Status:** 🟡 PENDING - Migrations Verification Required | ✅ Database Connected | ✅ Phase 1 AI Scoring Complete
 
 ---
 
-## 🚨 Current Issue (Active)
+## 🔄 Current Status
 
-**Error:** Database DNS resolution failure  
-**Status:** 🔴 CRITICAL - System Stability: 0%
+### ✅ Database Connection Fixed
+**Resolution:** Database connection issue resolved using Railway Reference Variables.
 
-**Health Dashboard Display:**
-- **Urgency Level:** CRITICAL (Red badge)
-- **System Status:** DEGRADED
-- **Database:** DISCONNECTED
-- **Impact:** High - All database operations failing, login and data management unavailable
-- **Error Type:** `dns_resolution_failure`
-- **Message:** "Database hostname cannot be resolved. Check DATABASE_URL in Railway Backend → Variables. Ensure it's a direct URL, not a variable reference (${{ }})."
-
-**View Real-Time Status:**
-- Visit `/health` in your browser to see the interactive dashboard
-- Shows urgency indicators, metrics, charts, and impact analysis
-- Auto-refreshes every 5 seconds
-
-**Enhanced Diagnostics Available:**
-- ✅ `/health` HTML dashboard shows visual urgency indicators and impact analysis
-- ✅ `/health.json` endpoint includes `error_type` and `error_message` for API access
-- ✅ Backend logs provide detailed DNS error detection and solution steps
-- ✅ `/debug/database-url` endpoint shows actual DATABASE_URL configuration
-
-**IMMEDIATE FIX STEPS:**
-1. Open Railway Dashboard → PostgreSQL Service → Variables tab
-2. Find `DATABASE_URL` and copy the ENTIRE value (looks like: `postgresql://user:pass@hostname:port/dbname`)
-3. Open Railway Dashboard → Backend Service → Variables tab
-4. Click "New Variable" or edit existing `DATABASE_URL`
-5. Paste the FULL URL directly (DO NOT use `${{ Postgres.DATABASE_URL }}`)
-6. Save the variable
-7. Railway will auto-redeploy (or manually trigger redeploy)
-8. Wait 2-3 minutes for deployment
-9. Visit `/health` dashboard - should show:
-   - ✅ Green badge: "All Systems Operational"
-   - ✅ Database: CONNECTED
-   - ✅ System Stability: 100%
-   - ✅ Connection pool metrics visible
+**What Was Fixed:**
+- ✅ All services recreated under single Railway project ("MAIN PROJECT")
+- ✅ Backend → Variables → Reference Variable → Selected DATABASE service
+- ✅ Internal service link automatically created (`postgres.railway.internal`)
+- ✅ Connection confirmed in deploy logs: `✅ Database connection successful`
+- ✅ Visible link appears between BACKEND and DATABASE in architecture graph
 
 **Verification:**
-After fix, the health dashboard should show:
-- Urgency Level: LOW (Green)
-- Database: CONNECTED
-- System Stability: 100%
-- Connection pool utilization chart visible
+- ✅ `/health` should now show `"database": "connected"`
+- ✅ No more "localhost" or DNS resolution errors
+- ✅ Backend can communicate with PostgreSQL
+
+### 🔄 Pending: Alembic Migration Verification
+**Status:** Migration configuration fixed, awaiting redeploy verification.
+
+**What Was Fixed:**
+- ✅ Updated `backend/Dockerfile` to copy `alembic.ini` and `alembic/` directory
+- ✅ Enhanced `start-railway.sh` with file verification and better error messages
+- ✅ Migration script now checks for `alembic.ini` before running
+
+**Next Steps:**
+1. Railway will auto-redeploy backend with updated Dockerfile
+2. Check deploy logs for: `🔄 Running database migrations...`
+3. Verify migration runs successfully (no "alembic.ini not found" errors)
+4. Confirm tables exist: `lead_scores`, `lead_engagement_events`, `lead_insights`
+
+**If Migration Still Fails:**
+- Use Railway CLI: `railway run alembic upgrade head`
+- Or verify files in Railway shell: `ls -la /app/alembic.ini`
+
+**See:** `DEPLOYMENT_FIX_SUMMARY.md` for complete details
 
 ---
 

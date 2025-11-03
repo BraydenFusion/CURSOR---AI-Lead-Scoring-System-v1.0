@@ -1,11 +1,23 @@
 #!/bin/bash
 # Railway startup script - properly expands PORT environment variable
 
-# Run database migrations on startup (Alembic checks if already applied, so safe)
-echo "🔄 Running database migrations..."
-cd /app && alembic upgrade head || {
-    echo "⚠️  Migration check completed (may already be up to date)"
-}
+# Ensure we're in the correct directory
+cd /app || cd "$(dirname "$0")/.." || exit 1
+
+# Verify alembic.ini exists
+if [ ! -f "alembic.ini" ]; then
+    echo "⚠️  WARNING: alembic.ini not found in $(pwd)"
+    echo "📁 Current directory contents:"
+    ls -la
+    echo "⚠️  Skipping migrations - database schema may need manual setup"
+else
+    # Run database migrations on startup (Alembic checks if already applied, so safe)
+    echo "🔄 Running database migrations from $(pwd)..."
+    echo "📄 Found alembic.ini at $(pwd)/alembic.ini"
+    alembic upgrade head || {
+        echo "⚠️  Migration check completed (may already be up to date or error occurred)"
+    }
+fi
 
 # Get PORT from environment, default to 8000 if not set
 PORT=${PORT:-8000}
