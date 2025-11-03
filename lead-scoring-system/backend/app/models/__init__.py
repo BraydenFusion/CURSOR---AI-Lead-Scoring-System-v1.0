@@ -7,6 +7,7 @@ from .user import User, UserRole
 from .assignment import LeadAssignment
 from .note import LeadNote
 from .notification import Notification, NotificationType
+from .ai_scoring import LeadScore, LeadEngagementEvent, LeadInsight
 
 __all__ = [
     "Lead",
@@ -19,4 +20,7 @@ __all__ = [
     "LeadNote",
     "Notification",
     "NotificationType",
+    "LeadScore",
+    "LeadEngagementEvent",
+    "LeadInsight",
 ]

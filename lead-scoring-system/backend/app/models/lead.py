@@ -64,6 +64,15 @@ class Lead(Base):
     notes: Mapped[List["LeadNote"]] = relationship(
         "LeadNote", back_populates="lead", cascade="all, delete-orphan"
     )
+    ai_scores: Mapped[List["LeadScore"]] = relationship(
+        "LeadScore", back_populates="lead", cascade="all, delete-orphan"
+    )
+    engagement_events: Mapped[List["LeadEngagementEvent"]] = relationship(
+        "LeadEngagementEvent", back_populates="lead", cascade="all, delete-orphan"
+    )
+    insights: Mapped[List["LeadInsight"]] = relationship(
+        "LeadInsight", back_populates="lead", cascade="all, delete-orphan"
+    )
 
     __table_args__ = (
         CheckConstraint("current_score >= 0 AND current_score <= 100", name="chk_leads_score_range"),
@@ -83,3 +92,4 @@ from .activity import LeadActivity  # noqa: E402  # circular import for type che
 from .score_history import LeadScoreHistory  # noqa: E402
 from .assignment import LeadAssignment  # noqa: E402
 from .note import LeadNote  # noqa: E402
+from .ai_scoring import LeadScore, LeadEngagementEvent, LeadInsight  # noqa: E402

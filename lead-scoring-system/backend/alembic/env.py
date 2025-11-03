@@ -28,6 +28,7 @@ from app.models.activity import LeadActivity  # noqa: F401
 from app.models.score_history import LeadScoreHistory  # noqa: F401
 from app.models.user import User  # noqa: F401
 from app.models.assignment import LeadAssignment  # noqa: F401
+from app.models.ai_scoring import LeadScore, LeadEngagementEvent, LeadInsight  # noqa: F401
 from app.models.note import LeadNote  # noqa: F401
 from app.models.notification import Notification  # noqa: F401
 
