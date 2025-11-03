@@ -31,8 +31,24 @@ class Settings(BaseSettings):
     def database_url(self) -> str:
         """Get database URL, handling Railway's postgres:// format."""
         url = os.getenv("DATABASE_URL", self.database_url_str)
+        
+        # Log what we got from environment
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        # Check if it's a Railway variable reference (not resolved)
+        if url and url.startswith("${{"):
+            logger.error(f"⚠️  DATABASE_URL appears to be an unresolved Railway reference: {url}")
+            logger.error("⚠️  This means the variable reference is not resolving!")
+            logger.error("⚠️  Try using 'Connect Service' instead of variable references")
+            # Fall back to default
+            url = None
+        
         if not url:
             url = "postgresql+psycopg://postgres:postgres@localhost:5433/lead_scoring"
+            logger.warning(f"⚠️  No DATABASE_URL found, using default: {url}")
+        else:
+            logger.info(f"✅ DATABASE_URL found in environment (length: {len(url)})")
         
         # Railway provides postgres:// but SQLAlchemy needs postgresql://
         if url.startswith("postgres://"):
