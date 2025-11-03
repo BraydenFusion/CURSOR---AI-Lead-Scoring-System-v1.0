@@ -407,13 +407,47 @@ def generate_insights(lead: Lead, lead_id: UUID, db: Session, score_data: Dict) 
     return insights
 
 
-def calculate_overall_score(lead_id: UUID, db: Session) -> Dict[str, any]:
+def calculate_overall_score(lead_id: UUID, db: Session, use_openai: bool = True) -> Dict[str, any]:
     """Calculate comprehensive AI score for a lead following PRD specifications.
+    
+    Args:
+        lead_id: UUID of the lead to score
+        db: Database session
+        use_openai: If True and OPENAI_API_KEY is set, use OpenAI for scoring. Otherwise use rule-based.
     
     Returns:
         Dict with overall_score, engagement_score, buying_signal_score, 
         demographic_score, priority_tier, confidence_level, insights
     """
+    # Try OpenAI first if enabled and API key is available
+    if use_openai:
+        try:
+            import os
+            if os.getenv("OPENAI_API_KEY"):
+                from .openai_scoring import score_lead_with_openai, save_openai_score
+                score_data, insights = score_lead_with_openai(lead_id, db)
+                lead_score = save_openai_score(lead_id, db, score_data, insights)
+                
+                # Convert to expected format
+                return {
+                    "lead_id": str(lead_id),
+                    "overall_score": score_data["overall_score"],
+                    "engagement_score": score_data["engagement_score"],
+                    "buying_signal_score": score_data["buying_signal_score"],
+                    "demographic_score": score_data["demographic_score"],
+                    "priority_tier": score_data["priority_tier"],
+                    "confidence_level": score_data["confidence_level"],
+                    "scored_at": lead_score.scored_at,
+                    "insights": insights,
+                    "scoring_metadata": score_data.get("scoring_metadata", {}),
+                }
+        except Exception as e:
+            # Fallback to rule-based if OpenAI fails
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"OpenAI scoring failed, falling back to rule-based: {e}")
+    
+    # Rule-based scoring (fallback or if OpenAI disabled)
     lead = db.query(Lead).filter(Lead.id == lead_id).first()
     if not lead:
         raise ValueError(f"Lead {lead_id} not found")

@@ -19,6 +19,9 @@ class Settings(BaseSettings):
 
     app_name: str = Field("Lead Scoring System")
     environment: str = Field(default="development")
+    
+    # OpenAI API Key for AI-powered lead scoring
+    openai_api_key: Optional[str] = Field(default=None, validation_alias="OPENAI_API_KEY")
 
     # Database - Railway provides DATABASE_URL automatically
     # Handle both postgres:// (Railway) and postgresql:// formats
