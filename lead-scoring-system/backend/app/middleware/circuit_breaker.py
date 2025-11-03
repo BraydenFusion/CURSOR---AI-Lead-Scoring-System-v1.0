@@ -111,7 +111,9 @@ class CircuitBreakerMiddleware(BaseHTTPMiddleware):
             if response.status_code < 500:
                 circuit_breaker.record_success()
             else:
-                circuit_breaker.record_failure()
+                # Only count database-related 500s as failures
+                if "database" in response.body.decode(errors="ignore").lower() if hasattr(response, 'body') else False:
+                    circuit_breaker.record_failure()
             
             return response
             
@@ -120,7 +122,7 @@ class CircuitBreakerMiddleware(BaseHTTPMiddleware):
             circuit_breaker.record_failure()
             logger.error(f"Database error triggering circuit breaker: {e}")
             raise  # Let error handler deal with it
-        except Exception as e:
-            # Other errors don't trigger circuit breaker
-            return await call_next(request)
+        except Exception:
+            # Re-raise to let error handlers deal with it
+            raise
 
