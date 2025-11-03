@@ -38,7 +38,11 @@ class User(Base):
     last_login: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     # Relationships
-    assigned_leads = relationship("LeadAssignment", back_populates="user")
+    assigned_leads = relationship(
+        "LeadAssignment",
+        primaryjoin="User.id == LeadAssignment.user_id",
+        back_populates="user"
+    )
 
     def __repr__(self) -> str:  # pragma: no cover
         return f"User(id={self.id}, username={self.username}, role={self.role.value})"
