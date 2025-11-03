@@ -59,8 +59,20 @@ async def database_exception_handler(request: Request, exc: SQLAlchemyError) -> 
 
     error_str = str(exc)
     
+    # Check for DNS resolution failure (Name or service not known)
+    if "Name or service not known" in error_str or "[Errno -2]" in error_str:
+        detail = (
+            "Database DNS resolution error: Cannot resolve database hostname. "
+            "The DATABASE_URL hostname is invalid or unreachable. "
+            "SOLUTION: Check Railway Backend → Variables → DATABASE_URL. "
+            "Copy the actual URL from PostgreSQL → Variables (not ${{ references})."
+        )
+        logger.error("⚠️  DNS resolution failure - DATABASE_URL hostname cannot be resolved")
+        logger.error("⚠️  This usually means DATABASE_URL contains an invalid/unresolvable hostname")
+        logger.error("⚠️  Or Railway variable references (${{ }}) are not resolving")
+    
     # Check if it's a connection error indicating DATABASE_URL not set
-    if "127.0.0.1" in error_str or "localhost:5433" in error_str or "Connection refused" in error_str:
+    elif "127.0.0.1" in error_str or "localhost:5433" in error_str or "Connection refused" in error_str:
         detail = (
             "Database connection error: Backend cannot connect to database. "
             "Please ensure PostgreSQL service is connected to backend service in Railway, "

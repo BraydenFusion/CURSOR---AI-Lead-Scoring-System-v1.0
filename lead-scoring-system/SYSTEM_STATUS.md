@@ -1,27 +1,45 @@
 # 📊 System Status & Roadmap
 
-**Last Updated:** 2025-11-03 14:00 UTC  
-**Version:** 2.0.0  
-**Status:** 🟡 In Production - Database Connection Issue (DNS Resolution Failure)
+**Last Updated:** 2025-11-03 14:15 UTC  
+**Version:** 2.0.1  
+**Status:** 🟡 In Production - Database Connection Issue (DNS Resolution Failure - Enhanced Diagnostics Added)
 
 ---
 
 ## 🚨 Current Issue (Active)
 
 **Error:** Database DNS resolution failure  
-**Health Check:** `{"database": "disconnected", "database_error": "[Errno -2] Name or service not known"}`  
-**Diagnosis:**
-1. ✅ Check `/debug/database-url` endpoint to see what DATABASE_URL is being used
-2. ✅ Verify DATABASE_URL in Railway Backend → Variables
-3. ✅ Ensure DATABASE_URL is a direct URL (not `${{ Postgres.DATABASE_URL }}`)
-4. ✅ Confirm PostgreSQL service is running
+**Health Check Response:** 
+```json
+{
+  "status": "degraded",
+  "database": "disconnected",
+  "database_error": "[Errno -2] Name or service not known",
+  "error_type": "dns_resolution_failure",
+  "error_message": "Database hostname cannot be resolved. Check DATABASE_URL in Railway Backend → Variables. Ensure it's a direct URL, not a variable reference (${{ }})."
+}
+```
+
+**Enhanced Diagnostics Available:**
+- ✅ `/health` endpoint now includes `error_type` and `error_message` for better diagnosis
+- ✅ Backend logs now provide detailed DNS error detection and solution steps
+- ✅ `/debug/database-url` endpoint shows actual DATABASE_URL configuration
+
+**Diagnosis Steps:**
+1. ✅ Check `/health` endpoint - now includes `error_type: "dns_resolution_failure"`
+2. ✅ Check `/debug/database-url` endpoint to see actual DATABASE_URL being used
+3. ✅ Verify DATABASE_URL in Railway Backend → Variables
+4. ✅ Ensure DATABASE_URL is a direct URL (not `${{ Postgres.DATABASE_URL }}`)
+5. ✅ Confirm PostgreSQL service is running
+6. ✅ Check Railway backend deploy logs for detailed DNS error messages
 
 **Quick Fix:**
 - Go to Railway Dashboard → PostgreSQL Service → Variables
-- Copy the `DATABASE_URL` value
+- Copy the `DATABASE_URL` value (should look like `postgresql://user:pass@hostname:port/dbname`)
 - Go to Railway Dashboard → Backend Service → Variables
-- Set `DATABASE_URL` = [paste copied value]
+- Set `DATABASE_URL` = [paste copied value directly - no `${{ }}` syntax]
 - Redeploy backend service
+- Verify `/health` now shows `"database": "connected"`
 
 ---
 
@@ -70,6 +88,8 @@
 - ✅ Database indexes for performance
 - ✅ Circuit breaker for database operations
 - ✅ Connection pool monitoring
+- ✅ DNS error detection and diagnostics (specific error types in health check)
+- ✅ Enhanced database error messages with solution steps
 
 ### Infrastructure & Deployment
 - ✅ Railway deployment configuration
@@ -197,8 +217,10 @@
 - **API Timeout:** 30 seconds (frontend)
 
 ### Monitoring Endpoints
-- `/health` - Health check with database pool metrics
-- `/debug/database-url` - DATABASE_URL configuration info
+- `/health` - Health check with database pool metrics and error diagnostics
+  - Now includes `error_type` and `error_message` when database is disconnected
+  - Error types: `dns_resolution_failure`, `localhost_connection`, `connection_refused`
+- `/debug/database-url` - DATABASE_URL configuration info (shows actual URL being used)
 - `/debug/routes` - List of all registered routes
 
 ---
@@ -238,6 +260,10 @@
 - ✅ Improved error handling and recovery
 - ✅ Enhanced security headers and XSS protection
 - ✅ Better CORS handling with fallbacks
+- ✅ **NEW:** DNS resolution error detection and specific diagnostics
+- ✅ **NEW:** Enhanced `/health` endpoint with error_type and error_message
+- ✅ **NEW:** Detailed DNS error logging with step-by-step solutions
+- ✅ **NEW:** Database error handler distinguishes DNS failures from other connection issues
 
 ---
 
@@ -322,10 +348,20 @@
 
 ## 🎯 Goals for Next Update
 
-1. Resolve database connection issue
-2. Verify all test users can login
-3. Monitor stability under normal load
-4. Document any new issues found
+1. ✅ Enhanced DNS error detection and diagnostics (completed)
+2. Resolve database connection issue (user action required in Railway)
+3. Verify all test users can login (after database fix)
+4. Monitor stability under normal load
+5. Document any new issues found
+
+## 📋 Recent Updates (v2.0.1)
+
+**2025-11-03 14:15 UTC:**
+- ✅ Added DNS resolution error detection to database error handler
+- ✅ Enhanced `/health` endpoint to include `error_type` and `error_message` fields
+- ✅ Improved startup logging with detailed DNS error diagnosis
+- ✅ Added specific error messages for different database connection failure types
+- ✅ Updated SYSTEM_STATUS.md with current issue details and enhanced diagnostics info
 
 ---
 

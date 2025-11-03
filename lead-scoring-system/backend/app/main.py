@@ -145,6 +145,28 @@ async def health_check():
         health_status["database"] = "disconnected"
         health_status["status"] = "degraded"
         health_status["database_error"] = str(e)
+        
+        # Add specific error type detection for better diagnostics
+        error_str = str(e)
+        if "Name or service not known" in error_str or "[Errno -2]" in error_str:
+            health_status["error_type"] = "dns_resolution_failure"
+            health_status["error_message"] = (
+                "Database hostname cannot be resolved. "
+                "Check DATABASE_URL in Railway Backend → Variables. "
+                "Ensure it's a direct URL, not a variable reference (${{ }})."
+            )
+        elif "127.0.0.1" in error_str or "localhost:5433" in error_str:
+            health_status["error_type"] = "localhost_connection"
+            health_status["error_message"] = (
+                "Backend is trying to connect to localhost. "
+                "DATABASE_URL is not set. Connect PostgreSQL service to Backend in Railway."
+            )
+        elif "Connection refused" in error_str:
+            health_status["error_type"] = "connection_refused"
+            health_status["error_message"] = (
+                "Database connection refused. PostgreSQL may not be running or accessible."
+            )
+        
         logger.warning(f"Database health check failed: {e}")
     
     return health_status
@@ -265,12 +287,29 @@ async def startup_event():
             conn.execute(text("SELECT 1"))
         logger.info("✅ Database connection successful")
     except Exception as e:
+        error_str = str(e)
         if "localhost:5433" in DATABASE_URL or "127.0.0.1:5433" in DATABASE_URL:
-            logger.warning(f"⚠️  Database connection failed: {str(e)}")
+            logger.warning(f"⚠️  Database connection failed: {error_str}")
             logger.warning("Backend will continue starting but database features won't work.")
             logger.warning("Connect PostgreSQL service to Backend service in Railway to fix this.")
+        elif "Name or service not known" in error_str or "[Errno -2]" in error_str:
+            logger.error("=" * 80)
+            logger.error("⚠️  DATABASE DNS RESOLUTION FAILURE")
+            logger.error("=" * 80)
+            logger.error(f"Error: {error_str}")
+            logger.error("")
+            logger.error("CAUSE: DATABASE_URL hostname cannot be resolved")
+            logger.error("")
+            logger.error("SOLUTION:")
+            logger.error("1. Railway Dashboard → PostgreSQL Service → Variables")
+            logger.error("2. Copy DATABASE_URL value (full URL, not ${{ references})")
+            logger.error("3. Railway Dashboard → Backend Service → Variables")
+            logger.error("4. Set DATABASE_URL = [paste the actual URL]")
+            logger.error("5. Ensure no ${{ Postgres.DATABASE_URL }} syntax")
+            logger.error("6. Redeploy backend service")
+            logger.error("=" * 80)
         else:
-            logger.warning(f"⚠️  Database connection failed: {str(e)}")
+            logger.warning(f"⚠️  Database connection failed: {error_str}")
             logger.warning("Please check your DATABASE_URL configuration.")
         # Don't raise - allow backend to start even without database
     
