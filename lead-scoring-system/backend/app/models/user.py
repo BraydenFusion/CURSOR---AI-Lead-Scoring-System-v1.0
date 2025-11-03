@@ -40,8 +40,9 @@ class User(Base):
     # Relationships
     assigned_leads = relationship(
         "LeadAssignment",
-        primaryjoin="and_(User.id == LeadAssignment.user_id)",
-        back_populates="user"
+        primaryjoin="User.id == LeadAssignment.user_id",
+        back_populates="user",
+        foreign_keys="[LeadAssignment.user_id]"
     )
 
     def __repr__(self) -> str:  # pragma: no cover
