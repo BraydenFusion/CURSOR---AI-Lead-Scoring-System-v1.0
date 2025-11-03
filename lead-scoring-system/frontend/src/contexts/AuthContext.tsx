@@ -108,10 +108,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const text = await response.text();
           console.error("Non-JSON error response:", text);
           
-          if (response.status === 0 || response.status === 404) {
-            errorMessage = "Cannot connect to server. Please check that the backend is running and VITE_API_URL is configured correctly.";
+          if (response.status === 0) {
+            errorMessage = `Cannot connect to backend at ${API_BASE_URL}. This is likely a CORS issue. Check Railway backend CORS configuration.`;
+          } else if (response.status === 404) {
+            errorMessage = `Backend endpoint not found (404). The login route may not be registered. Check Railway backend deploy logs.`;
           } else if (response.status === 403) {
-            errorMessage = "Access forbidden. Please check CORS configuration.";
+            errorMessage = "Access forbidden. Please check CORS configuration on backend.";
           } else {
             errorMessage = `Server error (${response.status}): ${response.statusText}`;
           }
