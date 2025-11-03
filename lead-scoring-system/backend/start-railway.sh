@@ -11,12 +11,31 @@ if [ ! -f "alembic.ini" ]; then
     ls -la
     echo "⚠️  Skipping migrations - database schema may need manual setup"
 else
-    # Run database migrations on startup (Alembic checks if already applied, so safe)
+    # Run database migrations on startup
     echo "🔄 Running database migrations from $(pwd)..."
     echo "📄 Found alembic.ini at $(pwd)/alembic.ini"
-    alembic upgrade head || {
-        echo "⚠️  Migration check completed (may already be up to date or error occurred)"
-    }
+    
+    # Check current revision
+    CURRENT_REV=$(alembic current 2>/dev/null | grep -oP '\([^)]+\)' | head -1 | tr -d '()' || echo "")
+    echo "📍 Current database revision: ${CURRENT_REV:-none}"
+    
+    # Run migrations - if tables don't exist, initial migration will create them
+    if alembic upgrade head; then
+        echo "✅ Migrations completed successfully"
+    else
+        echo "⚠️  Migration error occurred - checking if tables exist..."
+        # Check if this is a "table doesn't exist" error that we can recover from
+        # If initial migration failed, try to stamp to 000 and retry
+        if [ -z "$CURRENT_REV" ]; then
+            echo "🔄 Database not initialized - stamping to 000_initial and retrying..."
+            alembic stamp 000_initial 2>/dev/null || true
+            alembic upgrade head || {
+                echo "⚠️  Migration failed after retry - backend will continue but database features may not work"
+            }
+        else
+            echo "⚠️  Migration error - backend will continue but some features may not work"
+        fi
+    fi
 fi
 
 # Get PORT from environment, default to 8000 if not set
