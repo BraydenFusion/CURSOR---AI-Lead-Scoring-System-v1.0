@@ -22,6 +22,10 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 
+// Log API URL on module load for debugging
+console.log("🔗 AuthContext API Base URL:", API_BASE_URL);
+console.log("🔗 VITE_API_URL env var:", import.meta.env.VITE_API_URL);
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -64,20 +68,75 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     formData.append("username", username);
     formData.append("password", password);
 
-    const response = await fetch(`${API_BASE_URL}/auth/login`, {
-      method: "POST",
-      body: formData,
-    });
+    try {
+      console.log("Attempting login to:", `${API_BASE_URL}/auth/login`);
+      
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+        method: "POST",
+        body: formData,
+      });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || "Login failed");
+      console.log("Login response status:", response.status);
+      console.log("Login response headers:", response.headers.get("content-type"));
+
+      if (!response.ok) {
+        // Try to parse JSON, but handle non-JSON responses gracefully
+        let errorMessage = "Login failed";
+        const contentType = response.headers.get("content-type");
+        
+        if (contentType && contentType.includes("application/json")) {
+          try {
+            const error = await response.json();
+            errorMessage = error.detail || error.message || "Login failed";
+          } catch (e) {
+            console.error("Failed to parse error JSON:", e);
+            const text = await response.text();
+            errorMessage = text || `HTTP ${response.status}: ${response.statusText}`;
+          }
+        } else {
+          // Response is not JSON (likely HTML error page or CORS error)
+          const text = await response.text();
+          console.error("Non-JSON error response:", text);
+          
+          if (response.status === 0 || response.status === 404) {
+            errorMessage = "Cannot connect to server. Please check that the backend is running and VITE_API_URL is configured correctly.";
+          } else if (response.status === 403) {
+            errorMessage = "Access forbidden. Please check CORS configuration.";
+          } else {
+            errorMessage = `Server error (${response.status}): ${response.statusText}`;
+          }
+        }
+        
+        throw new Error(errorMessage);
+      }
+
+      // Check if response is actually JSON before parsing
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        const text = await response.text();
+        console.error("Expected JSON but got:", contentType, text);
+        throw new Error("Server returned invalid response. Please check backend configuration.");
+      }
+
+      const data = await response.json();
+      
+      if (!data.access_token) {
+        throw new Error("Invalid response from server: missing access token");
+      }
+      
+      localStorage.setItem("token", data.access_token);
+      setUser(data.user);
+      navigate("/dashboard");
+    } catch (error) {
+      console.error("Login error:", error);
+      
+      // Re-throw with better message if it's a network error
+      if (error instanceof TypeError && error.message.includes("fetch")) {
+        throw new Error("Network error: Cannot connect to backend. Please check VITE_API_URL configuration.");
+      }
+      
+      throw error;
     }
-
-    const data = await response.json();
-    localStorage.setItem("token", data.access_token);
-    setUser(data.user);
-    navigate("/dashboard");
   };
 
   const logout = () => {
