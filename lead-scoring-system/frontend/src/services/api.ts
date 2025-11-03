@@ -1,28 +1,10 @@
 import axios from "axios";
+import { getApiConfig, initializeApiConfig } from "../config";
 
-// Use environment variable, fallback to local
-// Railway will set VITE_API_URL or use VITE_API_BASE_URL
-let apiBaseUrl = 
-  import.meta.env.VITE_API_URL || 
-  import.meta.env.VITE_API_BASE_URL || 
-  'http://localhost:8000/api';
+// Initialize API config asynchronously
+initializeApiConfig().catch(console.error);
 
-// Ensure URL has protocol
-if (!apiBaseUrl.startsWith("http://") && !apiBaseUrl.startsWith("https://")) {
-  apiBaseUrl = `https://${apiBaseUrl}`;
-}
-
-// Ensure URL ends with /api
-if (!apiBaseUrl.endsWith("/api")) {
-  // Remove trailing slash if present
-  apiBaseUrl = apiBaseUrl.replace(/\/$/, "");
-  // Add /api if not present
-  if (!apiBaseUrl.endsWith("/api")) {
-    apiBaseUrl = `${apiBaseUrl}/api`;
-  }
-}
-
-const API_BASE_URL = apiBaseUrl;
+const API_BASE_URL = getApiConfig().baseUrl;
 
 console.log('API Base URL:', API_BASE_URL);
 console.log('VITE_API_URL env var (raw):', import.meta.env.VITE_API_URL);

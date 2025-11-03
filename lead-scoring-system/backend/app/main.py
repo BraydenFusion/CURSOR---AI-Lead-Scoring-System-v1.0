@@ -118,6 +118,29 @@ def configure_routers(application: FastAPI) -> None:
             "base_path": "/api"
         }
 
+    @application.get("/api/config")
+    def frontend_config(request: Request):
+        """Frontend configuration endpoint - provides API base URL."""
+        import os
+        
+        # Get backend URL from request (most reliable)
+        scheme = request.url.scheme
+        host = request.url.hostname
+        port = request.url.port
+        
+        # Construct base URL
+        if port and port not in [80, 443]:
+            backend_base = f"{scheme}://{host}:{port}"
+        else:
+            backend_base = f"{scheme}://{host}"
+        
+        api_base_url = f"{backend_base}/api"
+        
+        return {
+            "apiBaseUrl": api_base_url,
+            "environment": settings.railway_environment or settings.environment,
+        }
+
     application.include_router(api_router, prefix="/api")
 
 

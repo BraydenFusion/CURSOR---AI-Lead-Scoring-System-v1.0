@@ -28,25 +28,12 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Get API URL from environment, ensuring proper format
-let apiBaseUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+import { getApiConfig, initializeApiConfig } from "../config";
 
-// Ensure URL has protocol
-if (!apiBaseUrl.startsWith("http://") && !apiBaseUrl.startsWith("https://")) {
-  apiBaseUrl = `https://${apiBaseUrl}`;
-}
+// Initialize API config asynchronously
+initializeApiConfig().catch(console.error);
 
-// Ensure URL ends with /api
-if (!apiBaseUrl.endsWith("/api")) {
-  // Remove trailing slash if present
-  apiBaseUrl = apiBaseUrl.replace(/\/$/, "");
-  // Add /api if not present
-  if (!apiBaseUrl.endsWith("/api")) {
-    apiBaseUrl = `${apiBaseUrl}/api`;
-  }
-}
-
-const API_BASE_URL = apiBaseUrl;
+const API_BASE_URL = getApiConfig().baseUrl;
 
 // Log API URL on module load for debugging
 console.log("🔗 AuthContext API Base URL:", API_BASE_URL);
