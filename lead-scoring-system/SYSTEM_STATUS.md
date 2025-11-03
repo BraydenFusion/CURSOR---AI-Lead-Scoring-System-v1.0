@@ -1,7 +1,7 @@
 # 📊 System Status & Roadmap
 
-**Last Updated:** 2025-11-03 15:15 UTC  
-**Version:** 2.0.3  
+**Last Updated:** 2025-11-03 15:30 UTC  
+**Version:** 2.0.4  
 **Status:** 🔴 CRITICAL - Database Disconnected (DNS Resolution Failure - Health Dashboard Confirmed Issue)
 
 ---
@@ -69,6 +69,10 @@ After fix, the health dashboard should show:
 - ✅ JWT-based authentication
 - ✅ Role-based access control (Admin, Manager, Sales Rep)
 - ✅ User registration and login
+- ✅ **NEW:** Frontend registration page at `/register`
+- ✅ **NEW:** Users can sign up and their credentials are saved to database
+- ✅ **NEW:** Automatic login after successful registration
+- ✅ **NEW:** Users persist across logouts and can log back in with same credentials
 - ✅ Token-based session management
 - ✅ Password hashing (bcrypt)
 - ✅ Rate limiting on authentication endpoints
@@ -393,6 +397,15 @@ After fix, the health dashboard should show:
 5. Document any new issues found
 
 ## 📋 Recent Updates
+
+**v2.0.4 (2025-11-03 15:30 UTC):**
+- ✅ Added user registration/signup functionality
+- ✅ Created RegisterPage component with form validation
+- ✅ Users can sign up at `/register` endpoint
+- ✅ Registration automatically saves users to database
+- ✅ Automatic login after successful registration
+- ✅ Users persist across logouts and can log back in with same credentials
+- ✅ Added "Sign up" link on login page for easy access
 
 **v2.0.3 (2025-11-03 15:00 UTC):**
 - ✅ Created real-time HTML health dashboard at `/health` endpoint
