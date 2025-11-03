@@ -148,10 +148,31 @@ def configure_routers(application: FastAPI) -> None:
         
         api_base_url = f"{backend_base}/api"
         
+        # Get CORS origins for debugging
+        cors_origins = settings.cors_origins
+        
         return {
             "apiBaseUrl": api_base_url,
             "environment": settings.railway_environment or settings.environment,
+            "corsOrigins": cors_origins,
+            "frontendOrigin": request.headers.get("origin"),
         }
+    
+    @application.options("/api/{path:path}")
+    async def options_handler(request: Request, path: str):
+        """Explicit OPTIONS handler for CORS preflight."""
+        origin = request.headers.get("origin")
+        logger.info(f"🔍 OPTIONS preflight for /api/{path} from origin: {origin}")
+        return JSONResponse(
+            content={"message": "CORS preflight"},
+            headers={
+                "Access-Control-Allow-Origin": origin or "*",
+                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH",
+                "Access-Control-Allow-Headers": "*",
+                "Access-Control-Allow-Credentials": "true",
+                "Access-Control-Max-Age": "3600",
+            }
+        )
 
     application.include_router(api_router, prefix="/api")
 
