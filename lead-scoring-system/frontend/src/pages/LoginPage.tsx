@@ -67,10 +67,16 @@ export function LoginPage() {
               {isLoading ? "Signing in..." : "Sign In"}
             </Button>
 
-            <div className="text-center mt-4">
-              <Link to="/forgot-password" className="text-sm text-blue-600 hover:underline">
+            <div className="text-center mt-4 space-y-2">
+              <Link to="/forgot-password" className="text-sm text-blue-600 hover:underline block">
                 Forgot password?
               </Link>
+              <p className="text-sm text-gray-600">
+                Don't have an account?{" "}
+                <Link to="/register" className="text-blue-600 hover:underline font-medium">
+                  Sign up
+                </Link>
+              </p>
             </div>
           </form>
         </CardContent>

@@ -10,9 +10,17 @@ interface User {
   is_active: boolean;
 }
 
+interface RegisterData {
+  email: string;
+  username: string;
+  full_name: string;
+  password: string;
+}
+
 interface AuthContextType {
   user: User | null;
   login: (username: string, password: string) => Promise<void>;
+  register: (data: RegisterData) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -157,6 +165,78 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const register = async (data: RegisterData) => {
+    try {
+      console.log("Attempting registration to:", `${API_BASE_URL}/auth/register`);
+      
+      const response = await fetch(`${API_BASE_URL}/auth/register`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: data.email,
+          username: data.username,
+          full_name: data.full_name,
+          password: data.password,
+          role: "sales_rep", // Default role for new users
+        }),
+      });
+
+      console.log("Registration response status:", response.status);
+
+      if (!response.ok) {
+        let errorMessage = "Registration failed";
+        const contentType = response.headers.get("content-type");
+        
+        if (contentType && contentType.includes("application/json")) {
+          try {
+            const error = await response.json();
+            errorMessage = error.detail || error.message || "Registration failed";
+          } catch (e) {
+            console.error("Failed to parse error JSON:", e);
+            const text = await response.text();
+            errorMessage = text || `HTTP ${response.status}: ${response.statusText}`;
+          }
+        } else {
+          const text = await response.text();
+          console.error("Non-JSON error response:", text);
+          
+          if (response.status === 0 || response.status === 404) {
+            errorMessage = "Cannot connect to server. Please check that the backend is running and VITE_API_URL is configured correctly.";
+          } else {
+            errorMessage = `Server error (${response.status}): ${response.statusText}`;
+          }
+        }
+        
+        throw new Error(errorMessage);
+      }
+
+      // Check if response is actually JSON before parsing
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        const text = await response.text();
+        console.error("Expected JSON but got:", contentType, text);
+        throw new Error("Server returned invalid response. Please check backend configuration.");
+      }
+
+      const userData = await response.json();
+      
+      // After successful registration, automatically log the user in
+      // We'll use the same credentials to login
+      await login(data.username, data.password);
+    } catch (error) {
+      console.error("Registration error:", error);
+      
+      // Re-throw with better message if it's a network error
+      if (error instanceof TypeError && error.message.includes("fetch")) {
+        throw new Error("Network error: Cannot connect to backend. Please check VITE_API_URL configuration.");
+      }
+      
+      throw error;
+    }
+  };
+
   const logout = () => {
     localStorage.removeItem("token");
     setUser(null);
@@ -168,6 +248,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         login,
+        register,
         logout,
         isAuthenticated: !!user,
         isLoading,
