@@ -86,7 +86,7 @@ async def upload_csv_leads(
         # SECURITY: Limit CSV parsing to prevent DoS
         csv_reader = csv.DictReader(io.StringIO(csv_content))
         
-        # Count rows first (with limit)
+        # Count rows first (with limit) - convert to list to check count
         rows = list(csv_reader)
         if not validate_csv_row_count(len(rows)):
             raise HTTPException(
@@ -97,6 +97,7 @@ async def upload_csv_leads(
         created_leads = []
         errors = []
         
+        # Process rows (already converted to list above)
         for row_num, row in enumerate(rows, start=2):  # Start at 2 (row 1 is header)
             try:
                 # SECURITY: Sanitize and validate all inputs
