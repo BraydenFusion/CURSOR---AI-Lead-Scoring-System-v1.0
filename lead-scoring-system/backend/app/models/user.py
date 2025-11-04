@@ -36,6 +36,7 @@ class User(Base):
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
     )
     last_login: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    profile_picture_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
     # Relationships
     assigned_leads = relationship(

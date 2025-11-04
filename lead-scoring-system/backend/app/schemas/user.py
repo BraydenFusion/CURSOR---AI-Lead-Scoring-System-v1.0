@@ -38,6 +38,7 @@ class UserResponse(UserBase):
     is_active: bool
     created_at: datetime
     last_login: datetime | None = None
+    profile_picture_url: str | None = None
 
     class Config:
         from_attributes = True

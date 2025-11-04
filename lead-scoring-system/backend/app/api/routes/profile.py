@@ -1,6 +1,7 @@
 """User profile management routes."""
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from ...database import get_db
@@ -52,19 +53,33 @@ async def upload_profile_picture(
             detail="File size must be less than 2MB"
         )
     
-    # For now, store the file metadata or URL
-    # In production, you would upload to S3, Cloudinary, or similar
-    # For this implementation, we'll store a placeholder URL
-    profile_picture_url = f"/uploads/profile/{current_user.id}/{file.filename}"
+    # SECURITY: Generate secure filename
+    import secrets
+    import os
+    from pathlib import Path
     
-    # Update user profile (in a real implementation, you'd store the actual file)
-    # For now, we'll just return success
-    # In production: upload to cloud storage and save URL to database
+    # Get file extension
+    file_ext = os.path.splitext(file.filename)[1] if file.filename else ".jpg"
+    
+    # Generate secure filename
+    secure_filename = f"{secrets.token_hex(16)}{file_ext}"
+    
+    # For now, store a URL path (in production, upload to S3/Cloudinary)
+    # In production, you would:
+    # 1. Upload to cloud storage (S3, Cloudinary, etc.)
+    # 2. Get the public URL
+    # 3. Store URL in database
+    profile_picture_url = f"/uploads/profile/{current_user.id}/{secure_filename}"
+    
+    # Update user profile with URL
+    current_user.profile_picture_url = profile_picture_url
+    db.commit()
+    db.refresh(current_user)
     
     return {
         "message": "Profile picture uploaded successfully",
         "profile_picture_url": profile_picture_url,
-        "filename": file.filename
+        "filename": secure_filename
     }
 
 
@@ -84,14 +99,14 @@ def change_password(
     - Check against breach database
     """
     # SECURITY: Verify current password
-    if not verify_password(current_password, current_user.hashed_password):
+    if not verify_password(request.current_password, current_user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Current password is incorrect"
         )
     
     # SECURITY: Validate new password strength
-    is_valid, error_msg = validate_password_strength(new_password)
+    is_valid, error_msg = validate_password_strength(request.new_password)
     if not is_valid:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -99,23 +114,28 @@ def change_password(
         )
     
     # SECURITY: Check if password appears in breach database
-    if check_password_breach(new_password):
+    if check_password_breach(request.new_password):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="This password has been found in data breaches. Please choose a different password."
         )
     
     # Update password
-    current_user.hashed_password = get_password_hash(new_password)
+    current_user.hashed_password = get_password_hash(request.new_password)
     db.commit()
     
     return {"message": "Password changed successfully"}
 
 
+class ChangeEmailRequest(BaseModel):
+    """Schema for email change request."""
+    new_email: str
+    password: str
+
+
 @router.post("/change-email", response_model=dict)
 def change_email(
-    new_email: str,
-    password: str,
+    request: ChangeEmailRequest,
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ):
@@ -128,7 +148,7 @@ def change_email(
     - Check if email already exists
     """
     # SECURITY: Verify current password
-    if not verify_password(password, current_user.hashed_password):
+    if not verify_password(request.password, current_user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Password is incorrect"
@@ -136,7 +156,7 @@ def change_email(
     
     # SECURITY: Sanitize and validate email
     try:
-        sanitized_email = sanitize_email(new_email)
+        sanitized_email = sanitize_email(request.new_email)
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
