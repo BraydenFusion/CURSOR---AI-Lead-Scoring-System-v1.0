@@ -14,6 +14,7 @@ class UserBase(BaseModel):
     email: EmailStr
     username: str = Field(..., min_length=3, max_length=100)
     full_name: str = Field(..., min_length=1, max_length=255)
+    company_role: str | None = Field(None, max_length=100, description="User's role within their company")
 
 
 class UserCreate(UserBase):

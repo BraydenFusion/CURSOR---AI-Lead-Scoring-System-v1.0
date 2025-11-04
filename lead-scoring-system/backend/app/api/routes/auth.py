@@ -56,6 +56,7 @@ def register_user(request: Request, user_data: UserCreate, db: Session = Depends
         sanitized_email = sanitize_email(user_data.email)
         sanitized_username = sanitize_string(user_data.username, max_length=100)
         sanitized_full_name = sanitize_string(user_data.full_name, max_length=255)
+        sanitized_company_role = sanitize_string(user_data.company_role, max_length=100) if user_data.company_role else None
     except ValueError as e:
         raise HTTPException(
             status_code=400,
@@ -102,6 +103,7 @@ def register_user(request: Request, user_data: UserCreate, db: Session = Depends
         full_name=user_data.full_name,
         hashed_password=hashed_password,
         role=user_data.role,
+        company_role=sanitized_company_role,
     )
 
     db.add(new_user)

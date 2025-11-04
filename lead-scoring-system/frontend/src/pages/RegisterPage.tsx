@@ -18,6 +18,7 @@ export function RegisterPage() {
     confirmPassword: "",
     plan: selectedPlan,
     membership_type: "individual", // individual or team
+    company_role: "",
   });
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -50,6 +51,11 @@ export function RegisterPage() {
       return;
     }
 
+    if (!formData.company_role) {
+      setError("Please select your company role");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -58,6 +64,7 @@ export function RegisterPage() {
         username: formData.username,
         full_name: formData.full_name,
         password: formData.password,
+        company_role: formData.company_role || undefined,
       });
       // After successful registration, register function automatically logs in and redirects
     } catch (err: any) {
@@ -173,6 +180,31 @@ export function RegisterPage() {
                   Team
                 </button>
               </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">What is your company role?</label>
+              <select
+                name="company_role"
+                value={formData.company_role}
+                onChange={(e) => setFormData({ ...formData, company_role: e.target.value })}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                required
+                disabled={isLoading}
+              >
+                <option value="">Select your role</option>
+                <option value="CEO/Founder">CEO/Founder</option>
+                <option value="VP Sales">VP Sales</option>
+                <option value="Sales Director">Sales Director</option>
+                <option value="Sales Manager">Sales Manager</option>
+                <option value="Sales Representative">Sales Representative</option>
+                <option value="Account Executive">Account Executive</option>
+                <option value="Business Development">Business Development</option>
+                <option value="Marketing Manager">Marketing Manager</option>
+                <option value="Marketing Director">Marketing Director</option>
+                <option value="Operations Manager">Operations Manager</option>
+                <option value="Other">Other</option>
+              </select>
             </div>
 
             <div>

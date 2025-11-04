@@ -15,6 +15,7 @@ interface RegisterData {
   username: string;
   full_name: string;
   password: string;
+  company_role?: string;
 }
 
 interface AuthContextType {
@@ -171,6 +172,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           full_name: data.full_name,
           password: data.password,
           role: "sales_rep", // Default role for new users
+          company_role: data.company_role || null,
         }),
       });
 
