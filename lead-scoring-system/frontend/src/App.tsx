@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { AuthProvider } from "./contexts/AuthContext";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { NavBar } from "./components/NavBar";
@@ -11,6 +11,30 @@ import { ResetPasswordPage } from "./pages/ResetPasswordPage";
 import { LeadDashboard } from "./components/LeadDashboard";
 import { MyLeadsPage } from "./pages/MyLeadsPage";
 import { LeadDetailPage } from "./pages/LeadDetailPage";
+import { SalesRepDashboard } from "./pages/SalesRepDashboard";
+import { ManagerDashboard } from "./pages/ManagerDashboard";
+import { OwnerDashboard } from "./pages/OwnerDashboard";
+
+// Role-based dashboard redirect component
+function DashboardRedirect() {
+  const { user } = useAuth();
+  
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  // Redirect based on role
+  if (user.role === "sales_rep") {
+    return <Navigate to="/dashboard/sales-rep" replace />;
+  } else if (user.role === "manager") {
+    return <Navigate to="/dashboard/manager" replace />;
+  } else if (user.role === "admin") {
+    return <Navigate to="/dashboard/owner" replace />;
+  }
+  
+  // Fallback to old dashboard
+  return <Navigate to="/dashboard/legacy" replace />;
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -34,6 +58,38 @@ function App() {
             <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route
               path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <DashboardRedirect />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/sales-rep"
+              element={
+                <ProtectedRoute allowedRoles={["sales_rep"]}>
+                  <SalesRepDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/manager"
+              element={
+                <ProtectedRoute allowedRoles={["manager", "admin"]}>
+                  <ManagerDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/owner"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <OwnerDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/legacy"
               element={
                 <ProtectedRoute>
                   <div className="min-h-screen bg-slate-50 text-slate-900">

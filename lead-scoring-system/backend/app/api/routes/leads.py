@@ -21,7 +21,11 @@ router = APIRouter()
 
 
 @router.post("", response_model=LeadRead, status_code=status.HTTP_201_CREATED)
-def create_lead(payload: LeadCreate, db: Session = Depends(get_db)) -> LeadRead:
+def create_lead(
+    payload: LeadCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> LeadRead:
     """Create a new lead and persist it to the database."""
 
     try:
