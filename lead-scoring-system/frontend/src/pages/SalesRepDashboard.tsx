@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { apiClient } from "../services/api";
 import { NavBar } from "../components/NavBar";
+import { WelcomeWalkthrough } from "../components/WelcomeWalkthrough";
 
 interface DashboardStats {
   total_leads: number;
@@ -47,6 +48,7 @@ export function SalesRepDashboard() {
   const [uploadType, setUploadType] = useState<"csv" | "individual">("csv");
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [uploadResult, setUploadResult] = useState<string | null>(null);
+  const [showWalkthrough, setShowWalkthrough] = useState(false);
   const [individualForm, setIndividualForm] = useState({
     name: "",
     email: "",
@@ -58,6 +60,13 @@ export function SalesRepDashboard() {
   useEffect(() => {
     loadDashboard();
     loadLeads();
+    
+    // Check if walkthrough should be shown (first-time user)
+    const walkthroughCompleted = localStorage.getItem("walkthrough_completed");
+    const walkthroughRole = localStorage.getItem("walkthrough_role");
+    if (!walkthroughCompleted || walkthroughRole !== user?.role) {
+      setShowWalkthrough(true);
+    }
   }, []);
 
   const loadDashboard = async () => {
@@ -160,6 +169,12 @@ export function SalesRepDashboard() {
 
   return (
     <div className="min-h-screen bg-slate-50">
+      {showWalkthrough && user && (
+        <WelcomeWalkthrough
+          role={user.role as "sales_rep" | "manager" | "admin"}
+          onComplete={() => setShowWalkthrough(false)}
+        />
+      )}
       <NavBar />
       <main className="mx-auto max-w-7xl px-6 py-8">
         <div className="mb-6 flex items-center justify-between">
@@ -169,7 +184,8 @@ export function SalesRepDashboard() {
           </div>
           <button
             onClick={() => setShowUpload(!showUpload)}
-            className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700"
+            data-walkthrough="upload-button"
+            className="rounded-lg bg-navy-600 px-4 py-2 font-semibold text-white hover:bg-navy-700"
           >
             {showUpload ? "Cancel" : "+ Upload Leads"}
           </button>
@@ -295,7 +311,7 @@ export function SalesRepDashboard() {
         )}
 
         {/* Statistics Cards */}
-        <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4" data-walkthrough="stats">
           <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
             <div className="text-sm font-medium text-slate-600">Total Leads</div>
             <div className="mt-2 text-3xl font-bold text-slate-900">{stats?.total_leads || 0}</div>
@@ -316,11 +332,11 @@ export function SalesRepDashboard() {
 
         <div className="mb-4 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
           <div className="text-2xl font-bold text-slate-900">Average Score</div>
-          <div className="mt-2 text-4xl font-bold text-blue-600">{stats?.average_score.toFixed(1) || 0}/100</div>
+          <div className="mt-2 text-4xl font-bold text-navy-600">{stats?.average_score.toFixed(1) || 0}/100</div>
         </div>
 
         {/* Leads Table */}
-        <div className="rounded-lg border border-slate-200 bg-white shadow-sm">
+        <div className="rounded-lg border border-slate-200 bg-white shadow-sm" data-walkthrough="leads-table">
           <div className="border-b border-slate-200 px-6 py-4">
             <h2 className="text-xl font-bold text-slate-900">My Leads</h2>
           </div>
@@ -345,7 +361,7 @@ export function SalesRepDashboard() {
                     <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-600">{lead.email}</td>
                     <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-600">{lead.phone || "-"}</td>
                     <td className="whitespace-nowrap px-6 py-4 text-sm">
-                      <span className={`font-bold ${lead.score >= 80 ? "text-red-600" : lead.score >= 50 ? "text-yellow-600" : "text-blue-600"}`}>
+                      <span className={`font-bold ${lead.score >= 80 ? "text-red-600" : lead.score >= 50 ? "text-yellow-600" : "text-navy-600"}`}>
                         {lead.score}/100
                       </span>
                     </td>

@@ -1,17 +1,23 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 
 export function RegisterPage() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const selectedPlan = (location.state as any)?.plan || "free";
+  
   const [formData, setFormData] = useState({
     email: "",
     username: "",
     full_name: "",
     password: "",
     confirmPassword: "",
+    plan: selectedPlan,
+    membership_type: "individual", // individual or team
   });
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -62,11 +68,11 @@ export function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 py-12 px-4">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-2xl text-center">Create Account</CardTitle>
-          <p className="text-center text-gray-600">Sign up for Lead Scoring System</p>
+          <p className="text-center text-slate-600">Start your free trial - No credit card required</p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -141,16 +147,73 @@ export function RegisterPage() {
               />
             </div>
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Creating account..." : "Create Account"}
+            <div>
+              <label className="block text-sm font-medium mb-2">Membership Type</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, membership_type: "individual" })}
+                  className={`rounded-lg border-2 px-4 py-2 text-sm font-medium ${
+                    formData.membership_type === "individual"
+                      ? "border-navy-600 bg-navy-50 text-navy-600"
+                      : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  Individual
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, membership_type: "team" })}
+                  className={`rounded-lg border-2 px-4 py-2 text-sm font-medium ${
+                    formData.membership_type === "team"
+                      ? "border-navy-600 bg-navy-50 text-navy-600"
+                      : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  Team
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">Plan</label>
+              <select
+                name="plan"
+                value={formData.plan}
+                onChange={(e) => setFormData({ ...formData, plan: e.target.value })}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                disabled={isLoading}
+              >
+                <option value="free">Free (50 leads/month)</option>
+                <option value="pro">Pro - $49/month (14-day trial)</option>
+                {formData.membership_type === "team" && (
+                  <>
+                    <option value="team">Team - $149/month (14-day trial)</option>
+                    <option value="enterprise">Enterprise (Custom pricing)</option>
+                  </>
+                )}
+              </select>
+              <p className="mt-1 text-xs text-slate-500">
+                {formData.plan === "free" && "Perfect for trying out LeadScore AI"}
+                {formData.plan === "pro" && "14-day free trial, then $49/month"}
+                {formData.plan === "team" && "14-day free trial, then $149/month"}
+                {formData.plan === "enterprise" && "Contact us for custom pricing"}
+              </p>
+            </div>
+
+            <Button type="submit" className="w-full bg-navy-600 hover:bg-navy-700" disabled={isLoading}>
+              {isLoading ? "Creating account..." : "Start Free Trial"}
             </Button>
 
-            <div className="text-center mt-4">
-              <p className="text-sm text-gray-600">
+            <div className="text-center mt-4 space-y-2">
+              <p className="text-sm text-slate-600">
                 Already have an account?{" "}
-                <Link to="/login" className="text-blue-600 hover:underline">
+                <Link to="/login" className="text-navy-600 hover:underline font-medium">
                   Sign in
                 </Link>
+              </p>
+              <p className="text-xs text-slate-500">
+                By signing up, you agree to our Terms of Service and Privacy Policy
               </p>
             </div>
           </form>

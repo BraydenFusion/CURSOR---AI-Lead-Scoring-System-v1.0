@@ -14,6 +14,8 @@ import { LeadDetailPage } from "./pages/LeadDetailPage";
 import { SalesRepDashboard } from "./pages/SalesRepDashboard";
 import { ManagerDashboard } from "./pages/ManagerDashboard";
 import { OwnerDashboard } from "./pages/OwnerDashboard";
+import { HomePage } from "./pages/HomePage";
+import { PricingPage } from "./pages/PricingPage";
 
 // Role-based dashboard redirect component
 function DashboardRedirect() {
@@ -52,6 +54,8 @@ function App() {
         <BrowserRouter>
           <AuthProvider>
             <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/pricing" element={<PricingPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -117,7 +121,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/home" element={<HomePage />} />
           </Routes>
         </AuthProvider>
       </BrowserRouter>

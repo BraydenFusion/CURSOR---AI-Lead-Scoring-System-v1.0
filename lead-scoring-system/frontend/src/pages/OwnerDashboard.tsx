@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { apiClient } from "../services/api";
 import { NavBar } from "../components/NavBar";
+import { WelcomeWalkthrough } from "../components/WelcomeWalkthrough";
 
 interface RepPerformance {
   rep: {
@@ -53,9 +54,17 @@ export function OwnerDashboard() {
   const { user } = useAuth();
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showWalkthrough, setShowWalkthrough] = useState(false);
 
   useEffect(() => {
     loadDashboard();
+    
+    // Check if walkthrough should be shown (first-time user)
+    const walkthroughCompleted = localStorage.getItem("walkthrough_completed");
+    const walkthroughRole = localStorage.getItem("walkthrough_role");
+    if (!walkthroughCompleted || walkthroughRole !== user?.role) {
+      setShowWalkthrough(true);
+    }
   }, []);
 
   const loadDashboard = async () => {
@@ -84,6 +93,12 @@ export function OwnerDashboard() {
 
   return (
     <div className="min-h-screen bg-slate-50">
+      {showWalkthrough && user && (
+        <WelcomeWalkthrough
+          role={user.role as "sales_rep" | "manager" | "admin"}
+          onComplete={() => setShowWalkthrough(false)}
+        />
+      )}
       <NavBar />
       <main className="mx-auto max-w-7xl px-6 py-8">
         <div className="mb-6">
@@ -92,7 +107,7 @@ export function OwnerDashboard() {
         </div>
 
         {/* System Statistics */}
-        <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4" data-walkthrough="system-stats">
           <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
             <div className="text-sm font-medium text-slate-600">Total Users</div>
             <div className="mt-2 text-3xl font-bold text-slate-900">{stats?.total_users || 0}</div>
@@ -109,8 +124,8 @@ export function OwnerDashboard() {
             <div className="mt-2 text-3xl font-bold text-red-900">{stats?.hot_leads || 0}</div>
           </div>
           <div className="rounded-lg border border-blue-200 bg-blue-50 p-6 shadow-sm">
-            <div className="text-sm font-medium text-blue-600">Average Score</div>
-            <div className="mt-2 text-3xl font-bold text-blue-900">{stats?.average_score.toFixed(1) || 0}/100</div>
+          <div className="text-sm font-medium text-navy-600">Average Score</div>
+          <div className="mt-2 text-3xl font-bold text-navy-900">{stats?.average_score.toFixed(1) || 0}/100</div>
           </div>
         </div>
 
@@ -134,7 +149,7 @@ export function OwnerDashboard() {
         </div>
 
         {/* Top Performers */}
-        <div className="mb-6 rounded-lg border border-slate-200 bg-white shadow-sm">
+        <div className="mb-6 rounded-lg border border-slate-200 bg-white shadow-sm" data-walkthrough="top-performers">
           <div className="border-b border-slate-200 px-6 py-4">
             <h2 className="text-xl font-bold text-slate-900">Top Performing Sales Reps</h2>
           </div>
@@ -162,7 +177,7 @@ export function OwnerDashboard() {
                       <span className="font-semibold text-red-600">{rep.hot_leads}</span>
                     </td>
                     <td className="whitespace-nowrap px-6 py-4 text-sm">
-                      <span className="font-bold text-blue-600">{rep.average_score.toFixed(1)}/100</span>
+                      <span className="font-bold text-navy-600">{rep.average_score.toFixed(1)}/100</span>
                     </td>
                     <td className="whitespace-nowrap px-6 py-4 text-sm">
                       <span className="font-semibold text-green-600">{rep.conversion_rate.toFixed(1)}%</span>
@@ -179,7 +194,7 @@ export function OwnerDashboard() {
 
         {/* Source Breakdown */}
         {stats?.source_breakdown && Object.keys(stats.source_breakdown).length > 0 && (
-          <div className="mb-6 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="mb-6 rounded-lg border border-slate-200 bg-white p-6 shadow-sm" data-walkthrough="sources">
             <h2 className="mb-4 text-xl font-bold text-slate-900">Lead Sources</h2>
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
               {Object.entries(stats.source_breakdown).map(([source, count]) => (
@@ -215,7 +230,7 @@ export function OwnerDashboard() {
                     <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-slate-900">{lead.name}</td>
                     <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-600">{lead.email}</td>
                     <td className="whitespace-nowrap px-6 py-4 text-sm">
-                      <span className={`font-bold ${lead.score >= 80 ? "text-red-600" : lead.score >= 50 ? "text-yellow-600" : "text-blue-600"}`}>
+                      <span className={`font-bold ${lead.score >= 80 ? "text-red-600" : lead.score >= 50 ? "text-yellow-600" : "text-navy-600"}`}>
                         {lead.score}/100
                       </span>
                     </td>
