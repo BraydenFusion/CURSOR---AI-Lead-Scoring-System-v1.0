@@ -32,6 +32,12 @@ export function HomePage() {
               <Link to="/pricing" className="text-slate-600 hover:text-navy-600">
                 Pricing
               </Link>
+              <Link to="/terms" className="text-slate-600 hover:text-navy-600">
+                Terms
+              </Link>
+              <Link to="/privacy" className="text-slate-600 hover:text-navy-600">
+                Privacy
+              </Link>
               {isAuthenticated ? (
                 <Link
                   to="/dashboard"
@@ -251,14 +257,14 @@ export function HomePage() {
               <h3 className="text-sm font-semibold text-slate-900">Legal</h3>
               <ul className="mt-4 space-y-2">
                 <li>
-                  <a href="#" className="text-sm text-slate-600 hover:text-navy-600">
+                  <Link to="/privacy" className="text-sm text-slate-600 hover:text-navy-600">
                     Privacy
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a href="#" className="text-sm text-slate-600 hover:text-navy-600">
+                  <Link to="/terms" className="text-sm text-slate-600 hover:text-navy-600">
                     Terms
-                  </a>
+                  </Link>
                 </li>
               </ul>
             </div>

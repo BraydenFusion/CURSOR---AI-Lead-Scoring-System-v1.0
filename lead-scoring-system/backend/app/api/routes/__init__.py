@@ -9,6 +9,7 @@ from .notes import router as notes_router
 from .notifications import router as notifications_router
 from .upload import router as upload_router
 from .dashboard import router as dashboard_router
+from .profile import router as profile_router
 
 # Import debug router if it exists
 try:
@@ -26,6 +27,7 @@ __all__ = [
     "notifications_router",
     "upload_router",
     "dashboard_router",
+    "profile_router",
 ]
 
 if debug_router:

@@ -16,6 +16,10 @@ import { ManagerDashboard } from "./pages/ManagerDashboard";
 import { OwnerDashboard } from "./pages/OwnerDashboard";
 import { HomePage } from "./pages/HomePage";
 import { PricingPage } from "./pages/PricingPage";
+import { FeaturesPage } from "./pages/FeaturesPage";
+import { TermsOfServicePage } from "./pages/TermsOfServicePage";
+import { PrivacyPolicyPage } from "./pages/PrivacyPolicyPage";
+import { SettingsPage } from "./pages/SettingsPage";
 
 // Role-based dashboard redirect component
 function DashboardRedirect() {
@@ -55,7 +59,10 @@ function App() {
           <AuthProvider>
             <Routes>
             <Route path="/" element={<HomePage />} />
+            <Route path="/features" element={<FeaturesPage />} />
             <Route path="/pricing" element={<PricingPage />} />
+            <Route path="/terms" element={<TermsOfServicePage />} />
+            <Route path="/privacy" element={<PrivacyPolicyPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -89,6 +96,14 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={["admin"]}>
                   <OwnerDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute>
+                  <SettingsPage />
                 </ProtectedRoute>
               }
             />

@@ -10,6 +10,7 @@ from .routes import (
     leads_router,
     notes_router,
     notifications_router,
+    profile_router,
     scoring_router,
     upload_router,
 )
@@ -24,6 +25,7 @@ except ImportError:
 router = APIRouter()
 
 router.include_router(auth_router, prefix="/auth", tags=["authentication"])
+router.include_router(profile_router, prefix="/auth", tags=["profile"])
 router.include_router(leads_router, prefix="/leads", tags=["leads"])
 router.include_router(activities_router, prefix="/leads", tags=["activities"])
 router.include_router(scoring_router, prefix="/leads", tags=["scoring"])
