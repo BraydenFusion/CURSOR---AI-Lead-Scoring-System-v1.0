@@ -33,7 +33,7 @@ def create_lead(payload: LeadCreate, db: Session = Depends(get_db)) -> LeadRead:
                 detail=f"Lead with email {payload.email} already exists"
             )
 
-        # Create new lead
+        # Create new lead with ownership
         lead = Lead(
             id=uuid4(),
             name=payload.name,
@@ -41,6 +41,7 @@ def create_lead(payload: LeadCreate, db: Session = Depends(get_db)) -> LeadRead:
             phone=payload.phone,
             source=payload.source,
             location=payload.location,
+            created_by=current_user.id,
             _metadata=payload.metadata,
             current_score=0,
             classification=None,
@@ -97,8 +98,14 @@ def list_leads(
     page: int = 1,
     per_page: int = 25,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
 ) -> LeadListResponse:
-    """Return a paginated list of leads."""
+    """Return a paginated list of leads.
+    
+    - Sales Reps: Only see their own leads
+    - Managers: See all sales reps' leads
+    - Owners/Admins: See all leads
+    """
 
     try:
         # Base query with eager loading to avoid N+1 queries
@@ -107,6 +114,18 @@ def list_leads(
             # joinedload(Lead.assignments),
             # joinedload(Lead.notes)
         )
+        
+        # Role-based filtering
+        from app.models.user import UserRole
+        if current_user.role == UserRole.SALES_REP:
+            # Sales reps only see their own leads
+            query = query.filter(Lead.created_by == current_user.id)
+        elif current_user.role == UserRole.MANAGER:
+            # Managers see all leads (no filter)
+            pass
+        elif current_user.role == UserRole.ADMIN:
+            # Admins/Owners see all leads (no filter)
+            pass
 
         # Filter by classification
         if classification != "all":

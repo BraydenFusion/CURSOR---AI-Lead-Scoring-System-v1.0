@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
-from sqlalchemy import CheckConstraint, Column, DateTime, Enum, Index, Integer, String, Enum as SQLEnum
+from sqlalchemy import CheckConstraint, Column, DateTime, Enum, ForeignKey, Index, Integer, String, Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -48,6 +48,8 @@ class Lead(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
     )
+    # Track which user (sales rep) created this lead
+    created_by: Mapped[Optional[uuid4]] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     # Map to 'metadata' column using private attribute to avoid SQLAlchemy reserved name conflict
     # Access via ._metadata in code, or use getattr/setattr with 'metadata' key
     _metadata: Mapped[Dict[str, Any]] = mapped_column("metadata", JSONB, default=dict, nullable=False)

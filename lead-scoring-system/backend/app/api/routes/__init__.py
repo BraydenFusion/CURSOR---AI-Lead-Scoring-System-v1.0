@@ -7,6 +7,8 @@ from .auth import router as auth_router
 from .assignments import router as assignments_router
 from .notes import router as notes_router
 from .notifications import router as notifications_router
+from .upload import router as upload_router
+from .dashboard import router as dashboard_router
 
 # Import debug router if it exists
 try:
@@ -22,6 +24,8 @@ __all__ = [
     "assignments_router",
     "notes_router",
     "notifications_router",
+    "upload_router",
+    "dashboard_router",
 ]
 
 if debug_router:
