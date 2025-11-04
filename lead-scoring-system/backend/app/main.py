@@ -895,10 +895,11 @@ async def startup_event():
 # Configure middleware (order matters - add security and monitoring first)
 # IMPORTANT: CORS must be added BEFORE SecurityHeadersMiddleware to avoid conflicts
 configure_cors(app)  # CORS first - before other middleware
-app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(RequestValidationMiddleware)  # Validate requests first
+app.add_middleware(SecurityHeadersMiddleware)  # Security headers
 app.add_middleware(CircuitBreakerMiddleware)  # Protect against cascade failures
 app.add_middleware(ConnectionPoolMonitor)    # Monitor connection pool usage
-app.add_middleware(RequestLimitsMiddleware)
+app.add_middleware(RequestLimitsMiddleware)  # Request size limits
 
 # Register exception handlers
 app.add_exception_handler(RequestValidationError, validation_exception_handler)

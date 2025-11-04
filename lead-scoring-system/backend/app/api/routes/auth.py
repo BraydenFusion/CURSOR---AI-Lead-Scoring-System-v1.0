@@ -38,8 +38,30 @@ router = APIRouter()
 
 
 @router.post("/register", response_model=UserResponse, status_code=201)
+@rate_limit_decorator  # SECURITY: Rate limit registration to prevent abuse
 def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
-    """Register a new user with high security password validation."""
+    """
+    Register a new user with high security password validation.
+    
+    Security features:
+    - Password strength validation
+    - Breach database checking
+    - Rate limiting
+    - Input sanitization
+    """
+    # SECURITY: Sanitize inputs
+    from app.utils.security import sanitize_email, sanitize_string
+    
+    try:
+        sanitized_email = sanitize_email(user_data.email)
+        sanitized_username = sanitize_string(user_data.username, max_length=100)
+        sanitized_full_name = sanitize_string(user_data.full_name, max_length=255)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=400,
+            detail=str(e),
+        )
+    
     # HIGH SECURITY: Validate password strength
     is_valid, error_msg = validate_password_strength(user_data.password)
     if not is_valid:
@@ -66,6 +88,11 @@ def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
             status_code=400,
             detail="User with this email or username already exists",
         )
+    
+    # SECURITY: Use sanitized values
+    user_data.email = sanitized_email
+    user_data.username = sanitized_username
+    user_data.full_name = sanitized_full_name
 
     # Create user with secure password hashing
     hashed_password = get_password_hash(user_data.password)
