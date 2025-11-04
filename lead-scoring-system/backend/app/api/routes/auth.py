@@ -39,7 +39,7 @@ router = APIRouter()
 
 @router.post("/register", response_model=UserResponse, status_code=201)
 @rate_limit_decorator  # SECURITY: Rate limit registration to prevent abuse
-def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
+def register_user(request: Request, user_data: UserCreate, db: Session = Depends(get_db)):
     """
     Register a new user with high security password validation.
     
