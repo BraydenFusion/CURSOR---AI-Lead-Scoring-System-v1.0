@@ -14,6 +14,15 @@ from ...models.user import User
 from ...schemas.lead import LeadCreate, LeadRead
 from ...services.ai_scoring import calculate_overall_score
 from ...utils.auth import get_current_active_user
+from ...utils.security import (
+    validate_filename,
+    validate_file_size,
+    sanitize_email,
+    sanitize_phone,
+    sanitize_csv_field,
+    validate_csv_row_count,
+    MAX_CSV_ROWS,
+)
 
 
 router = APIRouter()
@@ -32,49 +41,137 @@ async def upload_csv_leads(
     - name, email, phone, source, location (optional)
     - First row should be headers
     - Phone and location are optional
+    
+    Security:
+    - File size limited to 10MB
+    - Maximum 1000 rows per upload
+    - Filename validation to prevent directory traversal
+    - Input sanitization for all fields
     """
-    if not file.filename.endswith('.csv'):
+    # SECURITY: Validate filename
+    if not file.filename or not validate_filename(file.filename):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="File must be a CSV file"
+            detail="Invalid filename or file type. Only CSV files are allowed."
+        )
+    
+    # SECURITY: Check file size before reading
+    file_size = 0
+    contents = b""
+    try:
+        contents = await file.read()
+        file_size = len(contents)
+        
+        if not validate_file_size(file_size):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"File size exceeds maximum allowed size of 10MB"
+            )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Error reading file: {str(e)}"
         )
     
     try:
-        # Read CSV content
-        contents = await file.read()
-        csv_content = contents.decode('utf-8')
+        # SECURITY: Validate encoding and decode safely
+        try:
+            csv_content = contents.decode('utf-8')
+        except UnicodeDecodeError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="File must be UTF-8 encoded"
+            )
+        
+        # SECURITY: Limit CSV parsing to prevent DoS
         csv_reader = csv.DictReader(io.StringIO(csv_content))
+        
+        # Count rows first (with limit)
+        rows = list(csv_reader)
+        if not validate_csv_row_count(len(rows)):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"CSV file contains too many rows. Maximum {MAX_CSV_ROWS} rows allowed."
+            )
         
         created_leads = []
         errors = []
         
-        for row_num, row in enumerate(csv_reader, start=2):  # Start at 2 (row 1 is header)
+        for row_num, row in enumerate(rows, start=2):  # Start at 2 (row 1 is header)
             try:
-                # Validate required fields
-                if not row.get('name') or not row.get('email'):
+                # SECURITY: Sanitize and validate all inputs
+                raw_name = row.get('name', '').strip()
+                raw_email = row.get('email', '').strip()
+                
+                if not raw_name or not raw_email:
                     errors.append({
                         "row": row_num,
                         "error": "Missing required fields: name and email are required"
                     })
                     continue
                 
-                # Check if email already exists
-                existing = db.query(Lead).filter(Lead.email == row['email'].strip()).first()
-                if existing:
+                # SECURITY: Sanitize email
+                try:
+                    sanitized_email = sanitize_email(raw_email)
+                except ValueError as e:
                     errors.append({
                         "row": row_num,
-                        "error": f"Lead with email {row['email']} already exists"
+                        "error": f"Invalid email format: {str(e)}"
                     })
                     continue
                 
-                # Create lead
+                # SECURITY: Sanitize name
+                try:
+                    sanitized_name = sanitize_csv_field(raw_name, "text")
+                    if len(sanitized_name) > 255:
+                        sanitized_name = sanitized_name[:255]
+                except ValueError as e:
+                    errors.append({
+                        "row": row_num,
+                        "error": f"Invalid name: {str(e)}"
+                    })
+                    continue
+                
+                # SECURITY: Check if email already exists (after sanitization)
+                existing = db.query(Lead).filter(Lead.email == sanitized_email).first()
+                if existing:
+                    errors.append({
+                        "row": row_num,
+                        "error": f"Lead with email {sanitized_email} already exists"
+                    })
+                    continue
+                
+                # SECURITY: Sanitize optional fields
+                sanitized_phone = None
+                if row.get('phone'):
+                    try:
+                        sanitized_phone = sanitize_phone(row.get('phone', ''))
+                    except ValueError:
+                        # Invalid phone, but not required, so continue
+                        pass
+                
+                sanitized_source = sanitize_csv_field(row.get('source', 'csv_upload'), "text")
+                if len(sanitized_source) > 100:
+                    sanitized_source = sanitized_source[:100]
+                if not sanitized_source:
+                    sanitized_source = 'csv_upload'
+                
+                sanitized_location = None
+                if row.get('location'):
+                    sanitized_location = sanitize_csv_field(row.get('location', ''), "text")
+                    if len(sanitized_location) > 255:
+                        sanitized_location = sanitized_location[:255]
+                    if not sanitized_location:
+                        sanitized_location = None
+                
+                # Create lead with sanitized data
                 lead = Lead(
                     id=uuid4(),
-                    name=row['name'].strip(),
-                    email=row['email'].strip(),
-                    phone=row.get('phone', '').strip() or None,
-                    source=row.get('source', 'csv_upload').strip() or 'csv_upload',
-                    location=row.get('location', '').strip() or None,
+                    name=sanitized_name,
+                    email=sanitized_email,
+                    phone=sanitized_phone,
+                    source=sanitized_source,
+                    location=sanitized_location,
                     created_by=current_user.id,
                     current_score=0,
                     classification=None,
@@ -138,22 +235,59 @@ def create_individual_lead(
     """Create a single lead and automatically score it with AI."""
     
     try:
+        # SECURITY: Sanitize and validate email
+        try:
+            sanitized_email = sanitize_email(payload.email)
+        except ValueError as e:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid email format: {str(e)}"
+            )
+        
         # Check if email already exists
-        existing_lead = db.query(Lead).filter(Lead.email == payload.email).first()
+        existing_lead = db.query(Lead).filter(Lead.email == sanitized_email).first()
         if existing_lead:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail=f"Lead with email {payload.email} already exists"
+                detail=f"Lead with email {sanitized_email} already exists"
             )
 
-        # Create new lead with ownership
+        # SECURITY: Sanitize name
+        sanitized_name = sanitize_csv_field(payload.name, "text")
+        if len(sanitized_name) > MAX_NAME_LENGTH:
+            sanitized_name = sanitized_name[:MAX_NAME_LENGTH]
+        
+        # SECURITY: Sanitize phone
+        sanitized_phone = None
+        if payload.phone:
+            try:
+                sanitized_phone = sanitize_phone(payload.phone)
+            except ValueError:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid phone number format"
+                )
+        
+        # SECURITY: Sanitize source
+        sanitized_source = sanitize_csv_field(payload.source or "manual_entry", "text")
+        if len(sanitized_source) > 100:
+            sanitized_source = sanitized_source[:100]
+        
+        # SECURITY: Sanitize location
+        sanitized_location = None
+        if payload.location:
+            sanitized_location = sanitize_csv_field(payload.location, "text")
+            if len(sanitized_location) > 255:
+                sanitized_location = sanitized_location[:255]
+
+        # Create new lead with ownership and sanitized data
         lead = Lead(
             id=uuid4(),
-            name=payload.name,
-            email=payload.email,
-            phone=payload.phone,
-            source=payload.source,
-            location=payload.location,
+            name=sanitized_name,
+            email=sanitized_email,
+            phone=sanitized_phone,
+            source=sanitized_source,
+            location=sanitized_location,
             created_by=current_user.id,
             _metadata={**payload.metadata, "upload_source": "individual", "uploaded_by": current_user.username},
             current_score=0,

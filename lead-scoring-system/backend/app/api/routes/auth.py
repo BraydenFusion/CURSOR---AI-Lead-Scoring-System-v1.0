@@ -55,12 +55,13 @@ def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
             detail="This password has been found in data breaches. Please choose a different password.",
         )
     
-    # Check if user exists
+    # SECURITY: Check if user exists (use sanitized values)
     existing_user = db.query(User).filter(
-        (User.email == user_data.email) | (User.username == user_data.username)
+        (User.email == sanitized_email) | (User.username == sanitized_username)
     ).first()
 
     if existing_user:
+        # SECURITY: Don't reveal which field already exists (prevents user enumeration)
         raise HTTPException(
             status_code=400,
             detail="User with this email or username already exists",

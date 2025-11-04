@@ -59,9 +59,37 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
 
 
 def decode_access_token(token: str) -> TokenData:
-    """Decode and verify JWT token."""
+    """
+    Decode and verify JWT token with security checks.
+    
+    Security features:
+    - Algorithm verification (only HS256)
+    - Expiration check
+    - Token type validation
+    - Not before check
+    """
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        # SECURITY: Explicitly specify algorithm to prevent algorithm confusion attacks
+        payload = jwt.decode(
+            token,
+            SECRET_KEY,
+            algorithms=[ALGORITHM],  # Only accept HS256
+            options={
+                "verify_signature": True,
+                "verify_exp": True,
+                "verify_nbf": True,
+                "require": ["exp", "iat", "nbf"]  # Require standard claims
+            }
+        )
+        
+        # SECURITY: Verify token type
+        token_type = payload.get("type")
+        if token_type != "access":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token type",
+            )
+        
         user_id: str = payload.get("sub")
         username: str = payload.get("username")
         role_str: str = payload.get("role")
@@ -78,6 +106,16 @@ def decode_access_token(token: str) -> TokenData:
         role = UserRole(role_str) if role_str else None
 
         return TokenData(user_id=UUID(user_id), username=username, role=role)
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token has expired",
+        )
+    except jwt.InvalidTokenError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token",
+        )
     except (JWTError, ValueError) as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
