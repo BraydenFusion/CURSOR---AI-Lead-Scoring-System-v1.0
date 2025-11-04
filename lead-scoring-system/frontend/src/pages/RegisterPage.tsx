@@ -183,8 +183,9 @@ export function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">What is your company role?</label>
+              <label htmlFor="company_role" className="block text-sm font-medium mb-1">What is your company role?</label>
               <select
+                id="company_role"
                 name="company_role"
                 value={formData.company_role}
                 onChange={(e) => setFormData({ ...formData, company_role: e.target.value })}
