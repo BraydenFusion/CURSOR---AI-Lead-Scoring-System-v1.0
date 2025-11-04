@@ -23,23 +23,34 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "frame-ancestors 'none';"
         )
         
-        # Security headers
-        response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["X-Frame-Options"] = "DENY"
-        response.headers["X-XSS-Protection"] = "1; mode=block"
-        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+        # Security headers - adjust for docs pages
+        if request.url.path.startswith("/docs") or request.url.path.startswith("/redoc"):
+            # Less restrictive for Swagger UI/ReDoc
+            response.headers["X-Content-Type-Options"] = "nosniff"
+            response.headers["X-Frame-Options"] = "SAMEORIGIN"  # Allow same-origin framing for docs
+            response.headers["X-XSS-Protection"] = "1; mode=block"
+            response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+            # Don't set Permissions-Policy for docs (may interfere with Swagger UI)
+        else:
+            # Full security headers for other endpoints
+            response.headers["X-Content-Type-Options"] = "nosniff"
+            response.headers["X-Frame-Options"] = "DENY"
+            response.headers["X-XSS-Protection"] = "1; mode=block"
+            response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+            response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
         
         # Only add CSP and HSTS in production (to avoid breaking Swagger UI in dev)
         if request.url.path.startswith("/docs") or request.url.path.startswith("/redoc"):
-            # Allow more for API docs
+            # More permissive CSP for Swagger UI/ReDoc - they need to load external resources
+            # Swagger UI loads from CDNs and needs to fetch the OpenAPI schema
             response.headers["Content-Security-Policy"] = (
                 "default-src 'self'; "
-                "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
-                "style-src 'self' 'unsafe-inline'; "
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com; "
+                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://unpkg.com; "
                 "img-src 'self' data: https:; "
-                "font-src 'self' data:; "
-                "connect-src 'self' https:;"
+                "font-src 'self' data: https://fonts.gstatic.com; "
+                "connect-src 'self' https:; "
+                "frame-ancestors 'none';"
             )
         else:
             response.headers["Content-Security-Policy"] = csp
