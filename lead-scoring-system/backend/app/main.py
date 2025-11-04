@@ -14,6 +14,7 @@ from .api import router as api_router
 from .middleware.rate_limit import configure_rate_limiting
 from .middleware.security_headers import SecurityHeadersMiddleware
 from .middleware.request_limits import RequestLimitsMiddleware
+from .middleware.request_validation import RequestValidationMiddleware
 from .middleware.connection_pool_monitor import ConnectionPoolMonitor
 from .middleware.circuit_breaker import CircuitBreakerMiddleware
 from .middleware.error_handler import (
