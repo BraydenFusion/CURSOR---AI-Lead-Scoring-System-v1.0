@@ -21,7 +21,8 @@ COPY start-railway.sh ./
 COPY run_migrations.py ./
 COPY ensure_users_table.py ./
 COPY fix_migrations.py ./
-RUN chmod +x start-railway.sh run_migrations.py ensure_users_table.py fix_migrations.py
+COPY create_users_table_railway.py ./
+RUN chmod +x start-railway.sh run_migrations.py ensure_users_table.py fix_migrations.py create_users_table_railway.py
 
 EXPOSE 8000
 
