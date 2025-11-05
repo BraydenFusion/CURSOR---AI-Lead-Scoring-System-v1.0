@@ -84,9 +84,9 @@ async function getBackendUrl(): Promise<string> {
 
   // Priority 3: Try to infer from Railway URL pattern and test each
   if (isRailwayProduction()) {
-    // Try multiple backend URL patterns
+    // Try multiple backend URL patterns - backend-base FIRST (most reliable)
     const backendUrls = [
-      'https://backend-base.up.railway.app',
+      'https://backend-base.up.railway.app', // Always try this first - it's the correct URL
       ...(inferBackendUrlFromRailway() ? [inferBackendUrlFromRailway()!] : []),
     ].filter(Boolean);
     
@@ -177,12 +177,18 @@ export function getApiConfig(): { baseUrl: string } {
     let defaultUrl: string;
     
     if (import.meta.env.VITE_API_URL) {
-      // Priority: Use build-time env var if available
+      // Priority 1: Use build-time env var if available
       defaultUrl = import.meta.env.VITE_API_URL;
     } else if (isRailwayProduction()) {
-      // For Railway: Infer backend URL from frontend URL
+      // Priority 2: Use hardcoded backend-base (most reliable for this deployment)
+      defaultUrl = 'https://backend-base.up.railway.app/api';
+      
+      // Fallback: Infer from frontend URL if needed
+      // But prefer backend-base which we know is correct
       const inferred = inferBackendUrlFromRailway();
-      defaultUrl = inferred ? `${inferred}/api` : 'http://localhost:8000/api';
+      if (inferred && inferred.includes('backend-base')) {
+        defaultUrl = `${inferred}/api`;
+      }
     } else {
       // Development fallback
       defaultUrl = 'http://localhost:8000/api';
@@ -191,6 +197,15 @@ export function getApiConfig(): { baseUrl: string } {
     apiConfigCache = {
       baseUrl: formatApiUrl(defaultUrl),
     };
+    
+    // Log for debugging
+    if (typeof window !== 'undefined') {
+      console.log('🔗 API Config (sync):', {
+        baseUrl: apiConfigCache.baseUrl,
+        viteEnv: import.meta.env.VITE_API_URL,
+        hostname: window.location.hostname,
+      });
+    }
     
     // Optionally verify/refine async (non-blocking)
     initializeApiConfig().catch(() => {
