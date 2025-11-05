@@ -48,13 +48,17 @@ fi
 echo ""
 echo "🔍 Verifying users table exists..."
 if [ -f "ensure_users_table.py" ]; then
+    echo "📄 Running ensure_users_table.py..."
     if python3 ensure_users_table.py; then
-        echo "✅ Users table verified/created"
+        echo "✅ Users table verified/created successfully"
     else
-        echo "⚠️  Could not verify/create users table - login may fail"
+        echo "❌ CRITICAL: Could not verify/create users table!"
+        echo "⚠️  Login and registration will fail until this is fixed"
+        echo "⚠️  Check Railway deploy logs above for detailed error messages"
     fi
 else
-    echo "⚠️  ensure_users_table.py not found - skipping verification"
+    echo "❌ ERROR: ensure_users_table.py not found!"
+    echo "⚠️  Cannot verify users table - login may fail"
 fi
 
 # Get PORT from environment, default to 8000 if not set

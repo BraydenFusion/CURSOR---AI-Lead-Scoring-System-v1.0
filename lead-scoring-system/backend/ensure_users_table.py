@@ -31,23 +31,30 @@ def ensure_users_table():
         print(f"🔗 Connecting to database...")
         engine = create_engine(database_url, echo=False)
         
-        with engine.connect() as conn:
+        # Use autocommit connection for DDL operations
+        with engine.begin() as conn:
             # Check if users table exists
             inspector = inspect(engine)
             tables = inspector.get_table_names()
             
             if 'users' in tables:
                 print("✅ users table already exists")
-                return True
+                # Verify columns
+                columns = inspector.get_columns("users")
+                column_names = [col["name"] for col in columns]
+                required_cols = ['id', 'email', 'username', 'hashed_password', 'full_name', 'role']
+                missing_cols = [col for col in required_cols if col not in column_names]
+                if missing_cols:
+                    print(f"⚠️  Missing columns: {missing_cols} - will add them")
+                else:
+                    print(f"   All required columns present ({len(column_names)} total)")
+                    return True
             
             print("⚠️  users table does NOT exist - creating it...")
             
-            # Start transaction
-            trans = conn.begin()
-            
             try:
                 # Create user_role enum if it doesn't exist
-                print("   Creating user_role enum...")
+                print("   Step 1: Creating user_role enum...")
                 conn.execute(text("""
                     DO $$ BEGIN
                         CREATE TYPE user_role AS ENUM ('admin', 'manager', 'sales_rep');
@@ -55,11 +62,12 @@ def ensure_users_table():
                         WHEN duplicate_object THEN null;
                     END $$;
                 """))
+                print("   ✅ user_role enum created/verified")
                 
                 # Create users table
-                print("   Creating users table...")
+                print("   Step 2: Creating users table...")
                 conn.execute(text("""
-                    CREATE TABLE IF NOT EXISTS users (
+                    CREATE TABLE users (
                         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                         email VARCHAR(255) NOT NULL UNIQUE,
                         username VARCHAR(100) NOT NULL UNIQUE,
@@ -74,18 +82,17 @@ def ensure_users_table():
                         company_role VARCHAR(100) NULL
                     )
                 """))
+                print("   ✅ users table created")
                 
                 # Create indexes
-                print("   Creating indexes...")
+                print("   Step 3: Creating indexes...")
                 conn.execute(text("""
                     CREATE INDEX IF NOT EXISTS ix_users_email ON users(email)
                 """))
                 conn.execute(text("""
                     CREATE INDEX IF NOT EXISTS ix_users_username ON users(username)
                 """))
-                
-                # Commit transaction
-                trans.commit()
+                print("   ✅ indexes created")
                 
                 # Verify table was created
                 inspector = inspect(engine)
@@ -97,19 +104,30 @@ def ensure_users_table():
                     # Check columns
                     columns = inspector.get_columns("users")
                     column_names = [col["name"] for col in columns]
-                    print(f"   Columns: {len(column_names)}")
-                    print(f"   Required columns present: {all(col in column_names for col in ['id', 'email', 'username', 'hashed_password', 'full_name', 'role'])}")
+                    print(f"   Total columns: {len(column_names)}")
+                    print(f"   Column names: {', '.join(column_names)}")
                     
-                    return True
+                    required_cols = ['id', 'email', 'username', 'hashed_password', 'full_name', 'role']
+                    missing_cols = [col for col in required_cols if col not in column_names]
+                    if missing_cols:
+                        print(f"   ⚠️  Missing required columns: {missing_cols}")
+                        return False
+                    else:
+                        print(f"   ✅ All required columns present")
+                        return True
                 else:
                     print("\n❌ ERROR: Table creation failed - users table still doesn't exist")
                     return False
                     
             except Exception as e:
-                trans.rollback()
                 print(f"\n❌ Error creating users table: {e}")
                 import traceback
                 traceback.print_exc()
+                # Try to rollback if possible
+                try:
+                    conn.rollback()
+                except:
+                    pass
                 return False
                 
     except Exception as e:

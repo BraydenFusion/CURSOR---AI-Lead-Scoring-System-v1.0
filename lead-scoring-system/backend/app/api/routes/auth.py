@@ -59,23 +59,23 @@ def register_user(request: Request, user_data: UserCreate, db: Session = Depends
         sanitized_company_role = sanitize_string(user_data.company_role, max_length=100) if user_data.company_role else None
     except ValueError as e:
         raise HTTPException(
-            status_code=400,
-            detail=str(e),
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Validation error: {str(e)}",
         )
     
     # HIGH SECURITY: Validate password strength
     is_valid, error_msg = validate_password_strength(user_data.password)
     if not is_valid:
         raise HTTPException(
-            status_code=400,
-            detail=f"Password security requirement not met: {error_msg}",
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Validation error: Password security requirement not met: {error_msg}",
         )
     
     # HIGH SECURITY: Check if password appears in breach database
     if check_password_breach(user_data.password):
         raise HTTPException(
-            status_code=400,
-            detail="This password has been found in data breaches. Please choose a different password.",
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Validation error: This password has been found in data breaches. Please choose a different password.",
         )
     
     # SECURITY: Check if user exists (use sanitized values)
@@ -86,8 +86,8 @@ def register_user(request: Request, user_data: UserCreate, db: Session = Depends
     if existing_user:
         # SECURITY: Don't reveal which field already exists (prevents user enumeration)
         raise HTTPException(
-            status_code=400,
-            detail="User with this email or username already exists",
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Validation error: User with this email or username already exists",
         )
     
     # SECURITY: Use sanitized values
