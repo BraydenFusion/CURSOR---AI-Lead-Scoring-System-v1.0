@@ -4,37 +4,42 @@
 # Ensure we're in the correct directory
 cd /app || cd "$(dirname "$0")/.." || exit 1
 
-# Verify alembic.ini exists
-if [ ! -f "alembic.ini" ]; then
-    echo "⚠️  WARNING: alembic.ini not found in $(pwd)"
-    echo "📁 Current directory contents:"
-    ls -la
-    echo "⚠️  Skipping migrations - database schema may need manual setup"
-else
-    # Run database migrations on startup
-    echo "🔄 Running database migrations from $(pwd)..."
-    echo "📄 Found alembic.ini at $(pwd)/alembic.ini"
-    
-    # Check current revision
-    CURRENT_REV=$(alembic current 2>/dev/null | grep -oP '\([^)]+\)' | head -1 | tr -d '()' || echo "")
-    echo "📍 Current database revision: ${CURRENT_REV:-none}"
-    
-    # Run migrations - if tables don't exist, initial migration will create them
-    if alembic upgrade head; then
-        echo "✅ Migrations completed successfully"
-    else
-        echo "⚠️  Migration error occurred - checking if tables exist..."
-        # Check if this is a "table doesn't exist" error that we can recover from
-        # If initial migration failed, try to stamp to 000 and retry
-        if [ -z "$CURRENT_REV" ]; then
-            echo "🔄 Database not initialized - stamping to 000_initial and retrying..."
-            alembic stamp 000_initial 2>/dev/null || true
+# Run database migrations using Python script (more reliable)
+echo "🔄 Running database migrations..."
+if [ -f "run_migrations.py" ]; then
+    # Use Python script for better error handling
+    python3 run_migrations.py || {
+        echo "⚠️  Migration script failed, trying alembic directly..."
+        # Fallback to direct alembic command
+        if [ -f "alembic.ini" ]; then
             alembic upgrade head || {
-                echo "⚠️  Migration failed after retry - backend will continue but database features may not work"
+                echo "❌ CRITICAL: Migrations failed - database tables may not exist!"
+                echo "⚠️  Backend will start but login/registration will fail"
             }
         else
-            echo "⚠️  Migration error - backend will continue but some features may not work"
+            echo "❌ ERROR: Neither run_migrations.py nor alembic.ini found!"
+            echo "📁 Current directory: $(pwd)"
+            ls -la
+        }
+    }
+else
+    echo "⚠️  run_migrations.py not found, trying alembic directly..."
+    if [ -f "alembic.ini" ]; then
+        echo "📄 Found alembic.ini at $(pwd)/alembic.ini"
+        CURRENT_REV=$(alembic current 2>/dev/null | grep -oP '\([^)]+\)' | head -1 | tr -d '()' || echo "")
+        echo "📍 Current database revision: ${CURRENT_REV:-none}"
+        
+        if alembic upgrade head; then
+            echo "✅ Migrations completed successfully"
+        else
+            echo "❌ Migration error - backend will continue but database features may not work"
+            echo "⚠️  Check Railway deploy logs for detailed error messages"
         fi
+    else
+        echo "❌ ERROR: alembic.ini not found in $(pwd)"
+        echo "📁 Current directory contents:"
+        ls -la
+        echo "⚠️  Skipping migrations - database schema may need manual setup"
     fi
 fi
 
