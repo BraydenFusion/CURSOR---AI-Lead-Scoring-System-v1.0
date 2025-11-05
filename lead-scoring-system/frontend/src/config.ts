@@ -22,74 +22,99 @@ function inferBackendUrlFromRailway(): string | null {
   
   // Common Railway patterns:
   // Frontend: frontend-production-xxx.up.railway.app
-  // Backend: backend-production-xxx.up.railway.app OR cursor-ai-lead-scoring-system-v10-production-backend-xxx.up.railway.app
+  // Backend: backend-production-xxx.up.railway.app OR backend-base.up.railway.app
   
-  // Pattern 1: Replace 'frontend' with 'backend'
-  let backendHostname = hostname.replace(/frontend(-production)?/i, 'backend$1');
+  // Try multiple backend URL patterns in order of likelihood
+  const backendPatterns = [
+    // Pattern 1: backend-base (common Railway naming)
+    'backend-base.up.railway.app',
+    // Pattern 2: Replace frontend-production with backend-production
+    hostname.replace(/frontend-production/i, 'backend-production'),
+    // Pattern 3: Replace frontend with backend
+    hostname.replace(/frontend(-production)?/i, 'backend$1'),
+    // Pattern 4: Try known backend service name pattern
+    hostname.replace(/-frontend-/, '-backend-'),
+  ];
   
-  // Pattern 2: If that didn't work, try replacing 'frontend-production' with 'backend-production'
-  if (backendHostname === hostname) {
-    backendHostname = hostname.replace(/frontend-production/i, 'backend-production');
-  }
+  // Remove duplicates and the original hostname
+  const uniquePatterns = [...new Set(backendPatterns)].filter(p => p !== hostname);
   
-  // Pattern 3: Try known backend service name pattern
-  if (backendHostname === hostname && hostname.includes('cursor-ai-lead-scoring-system-v10-production')) {
-    // Try different backend service name patterns
-    const patterns = [
-      hostname.replace(/frontend-production/, 'backend-production'),
-      hostname.replace(/-frontend-/, '-backend-'),
-      hostname.replace(/frontend/, 'backend'),
-    ];
-    
-    for (const pattern of patterns) {
-      if (pattern !== hostname) {
-        backendHostname = pattern;
-        break;
-      }
+  // Try each pattern by attempting to connect
+  for (const backendHostname of uniquePatterns) {
+    if (backendHostname && backendHostname.includes('railway.app')) {
+      return `https://${backendHostname}`;
     }
   }
   
-  // If we found a different hostname, construct the URL
-  if (backendHostname !== hostname && backendHostname) {
-    return `https://${backendHostname}`;
-  }
-  
   return null;
+}
+
+// Helper to test if a backend URL is accessible
+async function testBackendUrl(url: string): Promise<boolean> {
+  try {
+    const configUrl = `${url}/api/config`;
+    const response = await fetch(configUrl, { 
+      method: 'GET',
+      signal: AbortSignal.timeout(3000), // 3 second timeout
+      mode: 'cors',
+    });
+    return response.ok;
+  } catch (error) {
+    return false;
+  }
 }
 
 // Helper to get backend URL from Railway service discovery or config
 async function getBackendUrl(): Promise<string> {
   // Priority 1: Vite env var (set at build time)
   if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL;
+    const envUrl = import.meta.env.VITE_API_URL;
+    if (await testBackendUrl(envUrl.replace('/api', ''))) {
+      return envUrl;
+    }
   }
 
   // Priority 2: Runtime environment variable (if Railway injects it)
   if (typeof window !== 'undefined' && (window as any).__BACKEND_URL__) {
-    return (window as any).__BACKEND_URL__;
+    const runtimeUrl = (window as any).__BACKEND_URL__;
+    if (await testBackendUrl(runtimeUrl.replace('/api', ''))) {
+      return runtimeUrl;
+    }
   }
 
-  // Priority 3: Try to infer from Railway URL pattern
+  // Priority 3: Try to infer from Railway URL pattern and test each
   if (isRailwayProduction()) {
+    // Try multiple backend URL patterns
+    const backendUrls = [
+      'https://backend-base.up.railway.app',
+      ...(inferBackendUrlFromRailway() ? [inferBackendUrlFromRailway()!] : []),
+    ].filter(Boolean);
+    
+    for (const backendUrl of backendUrls) {
+      if (await testBackendUrl(backendUrl)) {
+        const configUrl = `${backendUrl}/api/config`;
+        try {
+          const response = await fetch(configUrl, { 
+            method: 'GET',
+            signal: AbortSignal.timeout(2000)
+          });
+          if (response.ok) {
+            const config = await response.json();
+            if (config.apiBaseUrl) {
+              return config.apiBaseUrl;
+            }
+          }
+        } catch (error) {
+          console.warn('Could not fetch config, using inferred URL:', error);
+        }
+        return `${backendUrl}/api`;
+      }
+    }
+    
+    // If inference failed, try the most common pattern anyway
     const inferredUrl = inferBackendUrlFromRailway();
     if (inferredUrl) {
-      // Try to fetch config from backend to confirm it exists
-      try {
-        const configUrl = `${inferredUrl}/api/config`;
-        const response = await fetch(configUrl, { 
-          method: 'GET',
-          signal: AbortSignal.timeout(2000) // 2 second timeout
-        });
-        if (response.ok) {
-          const config = await response.json();
-          if (config.apiBaseUrl) {
-            return config.apiBaseUrl;
-          }
-          return `${inferredUrl}/api`;
-        }
-      } catch (error) {
-        console.warn('Could not verify inferred backend URL, using it anyway:', error);
-      }
+      console.warn('Using inferred backend URL without verification:', inferredUrl);
       return `${inferredUrl}/api`;
     }
   }
