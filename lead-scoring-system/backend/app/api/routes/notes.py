@@ -91,7 +91,7 @@ def delete_note(
         raise HTTPException(status_code=404, detail="Note not found")
 
     # Only author or admin can delete
-    if note.user_id != current_user.id and current_user.role.value != "admin":
+    if note.user_id != current_user.id and current_user.get_role_enum().value != "admin":
         raise HTTPException(status_code=403, detail="Permission denied")
 
     db.delete(note)

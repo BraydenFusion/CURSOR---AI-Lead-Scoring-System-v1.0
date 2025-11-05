@@ -97,10 +97,10 @@ def configure_cors(application: FastAPI) -> None:
     # CRITICAL: allow_origin_regex takes precedence over allow_origins for matching
     application.add_middleware(
         CORSMiddleware,
-        allow_origins=allow_origins,  # Explicit origins (fallback)
-        allow_origin_regex=r"https://.*\.up\.railway\.app",  # Allow ALL Railway domains via regex (PRIMARY)
+        allow_origins=allow_origins if allow_origins else ["*"],  # Explicit origins (fallback to all in dev)
+        allow_origin_regex=r"https://.*\.up\.railway\.app|https://.*\.railway\.app",  # Allow ALL Railway domains via regex (PRIMARY)
         allow_credentials=True,
-        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"],
         allow_headers=["*"],
         expose_headers=["*"],
         max_age=3600,  # Cache preflight for 1 hour
@@ -162,13 +162,28 @@ def configure_routers(application: FastAPI) -> None:
     @application.options("/api/{path:path}")
     async def options_handler(request: Request, path: str):
         """Explicit OPTIONS handler for CORS preflight."""
+        import re
         origin = request.headers.get("origin")
         logger.info(f"🔍 OPTIONS preflight for /api/{path} from origin: {origin}")
+        
+        # Check if origin is allowed (same logic as CORS middleware)
+        allowed_origin = None
+        if origin:
+            # Check against explicit origins
+            if origin in allow_origins:
+                allowed_origin = origin
+            # Check against regex pattern for Railway
+            elif re.match(r"https://.*\.up\.railway\.app|https://.*\.railway\.app", origin):
+                allowed_origin = origin
+        
+        # Use origin if allowed, otherwise use * (for development)
+        cors_origin = allowed_origin if allowed_origin else (origin if origin else "*")
+        
         return JSONResponse(
             content={"message": "CORS preflight"},
             headers={
-                "Access-Control-Allow-Origin": origin or "*",
-                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH",
+                "Access-Control-Allow-Origin": cors_origin,
+                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD",
                 "Access-Control-Allow-Headers": "*",
                 "Access-Control-Allow-Credentials": "true",
                 "Access-Control-Max-Age": "3600",

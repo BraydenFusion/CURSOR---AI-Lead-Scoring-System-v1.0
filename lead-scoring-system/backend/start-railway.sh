@@ -62,21 +62,36 @@ else
     ls -la
 fi
 
-# CRITICAL: Ensure users table exists (fallback if migrations failed)
+# CRITICAL: Verify and fix users table structure (ensure sign in/sign up works)
 echo ""
-echo "🔍 Verifying users table exists..."
-if [ -f "ensure_users_table.py" ]; then
-    echo "📄 Running ensure_users_table.py..."
-    if python3 ensure_users_table.py; then
-        echo "✅ Users table verified/created successfully"
+echo "🔍 Verifying users table structure..."
+if [ -f "verify_and_fix_users_table.py" ]; then
+    echo "📄 Running verify_and_fix_users_table.py..."
+    if python3 verify_and_fix_users_table.py; then
+        echo "✅ Users table verified and ready for sign in/sign up"
     else
-        echo "❌ CRITICAL: Could not verify/create users table!"
-        echo "⚠️  Login and registration will fail until this is fixed"
-        echo "⚠️  Check Railway deploy logs above for detailed error messages"
+        echo "⚠️  Users table verification had issues - check logs above"
+        echo "⚠️  Attempting fallback ensure_users_table.py..."
+        if [ -f "ensure_users_table.py" ]; then
+            if python3 ensure_users_table.py; then
+                echo "✅ Users table verified via fallback script"
+            else
+                echo "❌ CRITICAL: Could not verify/create users table!"
+                echo "⚠️  Login and registration will fail until this is fixed"
+            fi
+        fi
     fi
 else
-    echo "❌ ERROR: ensure_users_table.py not found!"
-    echo "⚠️  Cannot verify users table - login may fail"
+    echo "⚠️  verify_and_fix_users_table.py not found, using ensure_users_table.py..."
+    if [ -f "ensure_users_table.py" ]; then
+        if python3 ensure_users_table.py; then
+            echo "✅ Users table verified via ensure_users_table.py"
+        else
+            echo "❌ CRITICAL: Could not verify/create users table!"
+        fi
+    else
+        echo "❌ ERROR: No users table verification script found!"
+    fi
 fi
 
 # Get PORT from environment, default to 8000 if not set

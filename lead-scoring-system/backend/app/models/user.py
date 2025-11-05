@@ -29,7 +29,9 @@ class User(Base):
     username: Mapped[str] = mapped_column(String(100), unique=True, nullable=False, index=True)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     full_name: Mapped[str] = mapped_column(String(255), nullable=False)
-    role: Mapped[UserRole] = mapped_column(SQLEnum(UserRole), nullable=False, default=UserRole.SALES_REP)
+    # Store as String to handle both ENUM and VARCHAR (Railway UI creates VARCHAR)
+    # Use property to convert to/from UserRole enum for compatibility
+    role: Mapped[str] = mapped_column(String(20), nullable=False, default="sales_rep")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
@@ -46,7 +48,13 @@ class User(Base):
         back_populates="user",
         foreign_keys="[LeadAssignment.user_id]"
     )
+    
+    def get_role_enum(self) -> UserRole:
+        """Get role as UserRole enum."""
+        try:
+            return UserRole(self.role)
+        except ValueError:
+            return UserRole.SALES_REP
 
     def __repr__(self) -> str:  # pragma: no cover
-        return f"User(id={self.id}, username={self.username}, role={self.role.value})"
-
+        return f"User(id={self.id}, username={self.username}, role={self.role})"

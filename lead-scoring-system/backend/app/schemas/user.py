@@ -35,7 +35,7 @@ class UserResponse(UserBase):
     """Schema for user response (excluding password)."""
 
     id: UUID
-    role: UserRole
+    role: str  # Store as string for compatibility with VARCHAR role column
     is_active: bool
     created_at: datetime
     last_login: datetime | None = None

@@ -40,7 +40,13 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 
 def get_password_hash(password: str) -> str:
-    """Hash a password."""
+    """Hash a password. Bcrypt has a 72-byte limit, so truncate if necessary."""
+    # Bcrypt has a 72-byte limit, so truncate password if it's longer
+    # This is safe because we validate password strength before hashing
+    password_bytes = password.encode('utf-8')
+    if len(password_bytes) > 72:
+        password_bytes = password_bytes[:72]
+        password = password_bytes.decode('utf-8', errors='ignore')
     return pwd_context.hash(password)
 
 
@@ -175,7 +181,7 @@ def require_role(allowed_roles: list):
     """Decorator to require specific roles."""
 
     async def role_checker(current_user: User = Depends(get_current_user)):
-        if current_user.role not in allowed_roles:
+        if current_user.get_role_enum() not in allowed_roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=f"Permission denied. Required roles: {allowed_roles}",

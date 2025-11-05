@@ -20,6 +20,17 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    # Check if leads table exists before adding column
+    connection = op.get_bind()
+    inspector = sa.inspect(connection)
+    tables = inspector.get_table_names()
+    
+    if 'leads' not in tables:
+        # If leads table doesn't exist, skip this migration
+        print("⚠️  WARNING: leads table does not exist. Skipping created_by column addition.")
+        print("⚠️  Run 000_initial migration first to create base tables.")
+        return
+    
     # Add created_by field to track which sales rep created the lead
     op.add_column('leads', sa.Column('created_by', UUID(as_uuid=True), sa.ForeignKey('users.id', ondelete='SET NULL'), nullable=True))
     op.create_index('idx_leads_created_by', 'leads', ['created_by'])

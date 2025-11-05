@@ -140,7 +140,7 @@ def get_prioritized_leads(
         )
 
         # Filter by user role
-        if current_user.role.value not in ["admin", "manager"]:
+        if current_user.get_role_enum().value not in ["admin", "manager"]:
             # Sales reps see only their assigned leads
             assigned_lead_ids = db.query(LeadAssignment.lead_id).filter(
                 LeadAssignment.user_id == current_user.id,

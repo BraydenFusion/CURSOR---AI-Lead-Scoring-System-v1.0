@@ -121,13 +121,14 @@ def list_leads(
         
         # Role-based filtering
         from app.models.user import UserRole
-        if current_user.role == UserRole.SALES_REP:
+        user_role = current_user.get_role_enum()
+        if user_role == UserRole.SALES_REP:
             # Sales reps only see their own leads
             query = query.filter(Lead.created_by == current_user.id)
-        elif current_user.role == UserRole.MANAGER:
+        elif user_role == UserRole.MANAGER:
             # Managers see all leads (no filter)
             pass
-        elif current_user.role == UserRole.ADMIN:
+        elif user_role == UserRole.ADMIN:
             # Admins/Owners see all leads (no filter)
             pass
 

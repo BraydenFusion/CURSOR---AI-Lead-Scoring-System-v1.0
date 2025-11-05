@@ -102,7 +102,7 @@ def register_user(request: Request, user_data: UserCreate, db: Session = Depends
         username=user_data.username,
         full_name=user_data.full_name,
         hashed_password=hashed_password,
-        role=user_data.role,
+        role=user_data.role.value,  # Store enum value as string
         company_role=sanitized_company_role,
     )
 
@@ -156,7 +156,7 @@ def login(
         data={
             "sub": str(user.id),
             "username": user.username,
-            "role": user.role.value,
+            "role": user.get_role_enum().value,
         }
     )
 

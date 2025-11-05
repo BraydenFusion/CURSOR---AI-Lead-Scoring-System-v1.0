@@ -48,7 +48,7 @@ def get_sales_rep_dashboard(
             "id": str(current_user.id),
             "name": current_user.full_name,
             "email": current_user.email,
-            "role": current_user.role.value
+            "role": current_user.get_role_enum().value
         },
         "statistics": {
             "total_leads": total_leads,
@@ -81,7 +81,7 @@ def get_manager_dashboard(
     """Get dashboard data for manager - overview of all sales reps."""
     
     # Get all sales reps
-    sales_reps = db.query(User).filter(User.role == UserRole.SALES_REP).all()
+    sales_reps = db.query(User).filter(User.role == UserRole.SALES_REP.value).all()
     
     # Get stats for each sales rep
     rep_stats = []
@@ -145,8 +145,8 @@ def get_owner_dashboard(
     
     # Get all users
     all_users = db.query(User).all()
-    sales_reps = [u for u in all_users if u.role == UserRole.SALES_REP]
-    managers = [u for u in all_users if u.role == UserRole.MANAGER]
+    sales_reps = [u for u in all_users if u.get_role_enum() == UserRole.SALES_REP]
+    managers = [u for u in all_users if u.get_role_enum() == UserRole.MANAGER]
     
     # Get all leads
     all_leads = db.query(Lead).all()
