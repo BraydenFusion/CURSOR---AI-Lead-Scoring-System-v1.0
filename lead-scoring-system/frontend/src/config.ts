@@ -127,17 +127,19 @@ async function getBackendUrl(): Promise<string> {
 function formatApiUrl(url: string): string {
   let apiUrl = url.trim();
 
+  // Remove trailing slashes
+  apiUrl = apiUrl.replace(/\/+$/, '');
+
   // Ensure protocol
   if (!apiUrl.startsWith('http://') && !apiUrl.startsWith('https://')) {
     apiUrl = `https://${apiUrl}`;
   }
 
-  // Ensure /api suffix
+  // Ensure /api suffix (add it if not present)
   if (!apiUrl.endsWith('/api')) {
-    apiUrl = apiUrl.replace(/\/$/, '');
-    if (!apiUrl.endsWith('/api')) {
-      apiUrl = `${apiUrl}/api`;
-    }
+    // Remove any trailing slash before adding /api
+    apiUrl = apiUrl.replace(/\/+$/, '');
+    apiUrl = `${apiUrl}/api`;
   }
 
   return apiUrl;
