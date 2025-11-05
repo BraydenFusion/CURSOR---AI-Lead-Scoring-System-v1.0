@@ -6,41 +6,45 @@ cd /app || cd "$(dirname "$0")/.." || exit 1
 
 # Run database migrations using Python script (more reliable)
 echo "🔄 Running database migrations..."
+
+# Try Python migration script first
 if [ -f "run_migrations.py" ]; then
-    # Use Python script for better error handling
-    python3 run_migrations.py || {
+    echo "📄 Using run_migrations.py..."
+    if python3 run_migrations.py; then
+        echo "✅ Migrations completed successfully via Python script"
+    else
         echo "⚠️  Migration script failed, trying alembic directly..."
         # Fallback to direct alembic command
         if [ -f "alembic.ini" ]; then
-            alembic upgrade head || {
+            if alembic upgrade head; then
+                echo "✅ Migrations completed successfully via alembic"
+            else
                 echo "❌ CRITICAL: Migrations failed - database tables may not exist!"
                 echo "⚠️  Backend will start but login/registration will fail"
-            }
+            fi
         else
-            echo "❌ ERROR: Neither run_migrations.py nor alembic.ini found!"
+            echo "❌ ERROR: alembic.ini not found!"
             echo "📁 Current directory: $(pwd)"
             ls -la
-        }
-    }
-else
-    echo "⚠️  run_migrations.py not found, trying alembic directly..."
-    if [ -f "alembic.ini" ]; then
-        echo "📄 Found alembic.ini at $(pwd)/alembic.ini"
-        CURRENT_REV=$(alembic current 2>/dev/null | grep -oP '\([^)]+\)' | head -1 | tr -d '()' || echo "")
-        echo "📍 Current database revision: ${CURRENT_REV:-none}"
-        
-        if alembic upgrade head; then
-            echo "✅ Migrations completed successfully"
-        else
-            echo "❌ Migration error - backend will continue but database features may not work"
-            echo "⚠️  Check Railway deploy logs for detailed error messages"
         fi
-    else
-        echo "❌ ERROR: alembic.ini not found in $(pwd)"
-        echo "📁 Current directory contents:"
-        ls -la
-        echo "⚠️  Skipping migrations - database schema may need manual setup"
     fi
+elif [ -f "alembic.ini" ]; then
+    echo "⚠️  run_migrations.py not found, using alembic directly..."
+    echo "📄 Found alembic.ini at $(pwd)/alembic.ini"
+    CURRENT_REV=$(alembic current 2>/dev/null | grep -oP '\([^)]+\)' | head -1 | tr -d '()' || echo "")
+    echo "📍 Current database revision: ${CURRENT_REV:-none}"
+    
+    if alembic upgrade head; then
+        echo "✅ Migrations completed successfully"
+    else
+        echo "❌ Migration error - backend will continue but database features may not work"
+        echo "⚠️  Check Railway deploy logs for detailed error messages"
+    fi
+else
+    echo "❌ ERROR: Neither run_migrations.py nor alembic.ini found!"
+    echo "📁 Current directory: $(pwd)"
+    ls -la
+    echo "⚠️  Skipping migrations - database schema may need manual setup"
 fi
 
 # Get PORT from environment, default to 8000 if not set
