@@ -18,17 +18,28 @@ def ensure_users_table():
         print("🔍 Ensuring Users Table Exists")
         print("=" * 60)
         
-        # Get database URL
-        database_url = os.getenv("DATABASE_URL", "")
-        if not database_url:
-            print("❌ ERROR: DATABASE_URL not set")
-            return False
-        
-        # Convert postgres:// to postgresql+psycopg://
-        if database_url.startswith("postgres://"):
-            database_url = database_url.replace("postgres://", "postgresql+psycopg://", 1)
+        # Get database URL from app config (handles conversion properly)
+        try:
+            from app.config import get_settings
+            settings = get_settings()
+            database_url = settings.database_url
+        except Exception:
+            # Fallback to environment variable
+            database_url = os.getenv("DATABASE_URL", "")
+            if not database_url:
+                print("❌ ERROR: DATABASE_URL not set")
+                return False
+            # Convert postgres:// to postgresql+psycopg:// (for psycopg3)
+            if database_url.startswith("postgres://"):
+                database_url = database_url.replace("postgres://", "postgresql+psycopg://", 1)
+            # Ensure psycopg driver is specified
+            if database_url.startswith("postgresql://") and "+psycopg" not in database_url:
+                database_url = database_url.replace("postgresql://", "postgresql+psycopg://", 1)
         
         print(f"🔗 Connecting to database...")
+        # Ensure we're using psycopg3 (not psycopg2)
+        if database_url.startswith("postgresql://") and "+psycopg" not in database_url:
+            database_url = database_url.replace("postgresql://", "postgresql+psycopg://", 1)
         engine = create_engine(database_url, echo=False)
         
         # Use autocommit connection for DDL operations

@@ -7,7 +7,25 @@ cd /app || cd "$(dirname "$0")/.." || exit 1
 # Run database migrations using Python script (more reliable)
 echo "🔄 Running database migrations..."
 
-# Try Python migration script first
+# Try fix_migrations.py first (handles broken migration state)
+if [ -f "fix_migrations.py" ]; then
+    echo "📄 Using fix_migrations.py to fix migration state..."
+    if python3 fix_migrations.py; then
+        echo "✅ Migrations fixed and completed successfully"
+    else
+        echo "⚠️  fix_migrations.py failed, trying run_migrations.py..."
+        # Fallback to regular migration script
+        if [ -f "run_migrations.py" ]; then
+            if python3 run_migrations.py; then
+                echo "✅ Migrations completed successfully via run_migrations.py"
+            else
+                echo "⚠️  run_migrations.py also failed, trying alembic directly..."
+            fi
+        fi
+    fi
+fi
+
+# Try regular migration script if fix didn't work
 if [ -f "run_migrations.py" ]; then
     echo "📄 Using run_migrations.py..."
     if python3 run_migrations.py; then

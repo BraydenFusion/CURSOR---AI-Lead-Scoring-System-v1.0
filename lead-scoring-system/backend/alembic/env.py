@@ -55,9 +55,9 @@ load_dotenv(backend_dir / ".env")
 from app.config import get_settings
 settings = get_settings()
 database_url = str(settings.database_url)
-# Convert to postgresql:// format for Alembic (it will handle psycopg internally)
-if "postgresql+psycopg://" in database_url:
-    database_url = database_url.replace("postgresql+psycopg://", "postgresql://")
+# SQLAlchemy 2.0 with psycopg3 supports postgresql+psycopg:// directly
+# Keep the psycopg driver - don't remove it
+# Note: Alembic uses SQLAlchemy's engine, which will use psycopg3 automatically
 config.set_main_option("sqlalchemy.url", database_url)
 
 # Interpret the config file for Python logging.

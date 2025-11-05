@@ -20,6 +20,18 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    # Check if leads table exists before creating foreign key
+    connection = op.get_bind()
+    inspector = sa.inspect(connection)
+    tables = inspector.get_table_names()
+    
+    if 'leads' not in tables:
+        # If leads table doesn't exist, skip this migration
+        # It will be created by 000_initial migration
+        print("⚠️  WARNING: leads table does not exist. Skipping lead_scores table creation.")
+        print("⚠️  Run 000_initial migration first to create base tables.")
+        return
+    
     # Create lead_scores table
     op.create_table(
         'lead_scores',
