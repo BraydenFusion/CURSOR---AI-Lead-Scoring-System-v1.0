@@ -19,8 +19,7 @@ if [ -f "run_migrations.py" ]; then
             if alembic upgrade head; then
                 echo "✅ Migrations completed successfully via alembic"
             else
-                echo "❌ CRITICAL: Migrations failed - database tables may not exist!"
-                echo "⚠️  Backend will start but login/registration will fail"
+                echo "❌ CRITICAL: Migrations failed - trying direct table creation..."
             fi
         else
             echo "❌ ERROR: alembic.ini not found!"
@@ -37,14 +36,25 @@ elif [ -f "alembic.ini" ]; then
     if alembic upgrade head; then
         echo "✅ Migrations completed successfully"
     else
-        echo "❌ Migration error - backend will continue but database features may not work"
-        echo "⚠️  Check Railway deploy logs for detailed error messages"
+        echo "❌ Migration error - trying direct table creation..."
     fi
 else
     echo "❌ ERROR: Neither run_migrations.py nor alembic.ini found!"
     echo "📁 Current directory: $(pwd)"
     ls -la
-    echo "⚠️  Skipping migrations - database schema may need manual setup"
+fi
+
+# CRITICAL: Ensure users table exists (fallback if migrations failed)
+echo ""
+echo "🔍 Verifying users table exists..."
+if [ -f "ensure_users_table.py" ]; then
+    if python3 ensure_users_table.py; then
+        echo "✅ Users table verified/created"
+    else
+        echo "⚠️  Could not verify/create users table - login may fail"
+    fi
+else
+    echo "⚠️  ensure_users_table.py not found - skipping verification"
 fi
 
 # Get PORT from environment, default to 8000 if not set

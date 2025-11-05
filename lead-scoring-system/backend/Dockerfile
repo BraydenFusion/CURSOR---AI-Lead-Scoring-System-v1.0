@@ -19,7 +19,8 @@ COPY alembic.ini ./
 COPY alembic ./alembic
 COPY start-railway.sh ./
 COPY run_migrations.py ./
-RUN chmod +x start-railway.sh run_migrations.py
+COPY ensure_users_table.py ./
+RUN chmod +x start-railway.sh run_migrations.py ensure_users_table.py
 
 EXPOSE 8000
 
