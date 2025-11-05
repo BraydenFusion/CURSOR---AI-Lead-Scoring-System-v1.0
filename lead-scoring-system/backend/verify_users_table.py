@@ -3,8 +3,19 @@
 
 import os
 import sys
-from sqlalchemy import create_engine, text, inspect
-from sqlalchemy.engine import Engine
+
+try:
+    from sqlalchemy import create_engine, text, inspect
+except ImportError:
+    print("❌ Error: sqlalchemy is not installed")
+    print("\nSOLUTION:")
+    print("1. Activate your virtual environment:")
+    print("   source venv/bin/activate  # or: source .venv/bin/activate")
+    print("\n2. Or install dependencies:")
+    print("   pip install -r requirements.txt")
+    print("\n3. Then run this script again:")
+    print("   python verify_users_table.py")
+    sys.exit(1)
 
 def get_database_url():
     """Get database URL from environment."""
@@ -20,7 +31,7 @@ def get_database_url():
     
     return url
 
-def verify_users_table(engine: Engine):
+def verify_users_table(engine):
     """Verify users table structure."""
     inspector = inspect(engine)
     
