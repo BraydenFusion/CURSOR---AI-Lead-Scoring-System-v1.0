@@ -94,6 +94,22 @@ else
     fi
 fi
 
+# CRITICAL: Ensure leads table exists (required for lead management)
+echo ""
+echo "🔍 Verifying leads table exists..."
+if [ -f "ensure_leads_table.py" ]; then
+    echo "📄 Running ensure_leads_table.py..."
+    if python3 ensure_leads_table.py; then
+        echo "✅ Leads table verified/created successfully"
+    else
+        echo "⚠️  Leads table verification had issues - check logs above"
+        echo "⚠️  Lead management features will not work until this is fixed"
+    fi
+else
+    echo "⚠️  ensure_leads_table.py not found - leads table will not be auto-created"
+    echo "⚠️  Run create_leads_table_railway.py manually if needed"
+fi
+
 # Get PORT from environment, default to 8000 if not set
 PORT=${PORT:-8000}
 
