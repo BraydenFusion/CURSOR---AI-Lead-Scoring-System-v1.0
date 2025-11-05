@@ -81,7 +81,7 @@ Check Railway deploy logs for:
 
 Then test:
 ```bash
-curl https://backend-production-e9b2.up.railway.app/api/leads
+curl https://backend-base.up.railway.app/api/leads
 # Should return empty list (not 500 error)
 ```
 

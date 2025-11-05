@@ -3,7 +3,7 @@
 ## Problem
 The frontend cannot connect to the backend, showing error:
 ```
-Network error: Cannot connect to backend at https://backend-production-e9b2.up.railway.app/api
+Network error: Cannot connect to backend at https://backend-base.up.railway.app/api
 ```
 
 ## Solution: Set Backend URL Environment Variable

@@ -13,10 +13,10 @@ NC='\033[0m' # No Color
 if [ -z "$BACKEND_URL" ]; then
     echo -e "${YELLOW}⚠️  BACKEND_URL not set.${NC}"
     echo "Please set it:"
-    echo "  export BACKEND_URL=https://your-backend.railway.app"
+    echo "  export BACKEND_URL=https://backend-base.up.railway.app"
     echo ""
     echo "Or run:"
-    echo "  BACKEND_URL=https://your-backend.railway.app ./create_users_via_api.sh"
+    echo "  BACKEND_URL=https://backend-base.up.railway.app ./create_users_via_api.sh"
     exit 1
 fi
 

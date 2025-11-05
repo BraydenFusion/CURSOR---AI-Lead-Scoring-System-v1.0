@@ -290,13 +290,13 @@
 
 #### Backend Required:
 - ✅ `DATABASE_URL` - ⚠️ NOT SET (needs connection)
-- ✅ `ALLOWED_ORIGINS` - Should be set to frontend URL
+- ✅ `ALLOWED_ORIGINS` - Should include `https://frontend-production-e9b2.up.railway.app`
 - ✅ `SECRET_KEY` - Required for JWT tokens
 - ⚙️ `UVICORN_WORKERS` - Optional (default: 2)
 - ⚙️ `UVICORN_TIMEOUT` - Optional (default: 120s)
 
 #### Frontend Required:
-- ✅ `VITE_API_URL` - Set to backend URL + `/api`
+- ✅ `VITE_API_URL` - Set to `https://backend-base.up.railway.app/api`
 - ✅ Auto-fixes if missing protocol or `/api` suffix
 
 ---
@@ -383,7 +383,7 @@
 
 ### CORS Errors
 **Symptoms:** "No 'Access-Control-Allow-Origin' header"  
-**Solution:** Set `ALLOWED_ORIGINS` in Backend Variables to frontend URL
+**Solution:** Set `ALLOWED_ORIGINS` in Backend Variables to `https://frontend-production-e9b2.up.railway.app`
 
 ---
 

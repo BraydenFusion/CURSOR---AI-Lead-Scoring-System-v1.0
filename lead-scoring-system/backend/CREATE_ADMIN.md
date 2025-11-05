@@ -18,7 +18,7 @@ python create_admin_user.py --username admin --password 'AdminSecure123!@'
 After Railway redeploys, create admin via API:
 
 ```bash
-curl -X POST https://backend-production-e9b2.up.railway.app/api/auth/register \
+curl -X POST https://backend-base.up.railway.app/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "username": "admin",
@@ -41,7 +41,7 @@ This password still meets all security requirements:
 Once backend is deployed on Railway:
 
 ```bash
-curl -X POST https://backend-production-e9b2.up.railway.app/api/auth/register \
+curl -X POST https://backend-base.up.railway.app/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "username": "admin",

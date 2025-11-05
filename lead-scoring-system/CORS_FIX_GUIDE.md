@@ -4,7 +4,7 @@
 
 You're getting CORS errors when trying to login:
 ```
-Network error: Cannot connect to backend at https://backend-production-e9b2.up.railway.app/api. 
+Network error: Cannot connect to backend at https://backend-base.up.railway.app/api. 
 This could be a CORS issue or the backend may be down.
 ```
 
@@ -37,7 +37,7 @@ After I push the fixes, Railway will automatically redeploy your backend. Wait 2
 
 Check that your backend is accessible:
 ```bash
-curl https://backend-production-e9b2.up.railway.app/health
+curl https://backend-base.up.railway.app/health
 ```
 
 Should return:
@@ -50,7 +50,7 @@ Should return:
 Test the CORS debug endpoint:
 ```bash
 curl -H "Origin: https://frontend-production-e9b2.up.railway.app" \
-     https://backend-production-e9b2.up.railway.app/api/debug/cors
+     https://backend-base.up.railway.app/api/debug/cors
 ```
 
 Should return CORS info and show your frontend origin.
@@ -103,7 +103,7 @@ curl -X OPTIONS \
   -H "Origin: https://frontend-production-e9b2.up.railway.app" \
   -H "Access-Control-Request-Method: POST" \
   -H "Access-Control-Request-Headers: Content-Type" \
-  -v https://backend-production-e9b2.up.railway.app/api/auth/login
+  -v https://backend-base.up.railway.app/api/auth/login
 
 # Should see in response:
 # < Access-Control-Allow-Origin: https://frontend-production-e9b2.up.railway.app
@@ -128,16 +128,16 @@ Look for specific CORS error messages:
 
 ```bash
 # Check backend health
-curl https://backend-production-e9b2.up.railway.app/health
+curl https://backend-base.up.railway.app/health
 
 # Test CORS debug endpoint
 curl -H "Origin: https://frontend-production-e9b2.up.railway.app" \
-     https://backend-production-e9b2.up.railway.app/api/debug/cors
+     https://backend-base.up.railway.app/api/debug/cors
 
 # Test OPTIONS preflight
 curl -X OPTIONS \
   -H "Origin: https://frontend-production-e9b2.up.railway.app" \
-  -v https://backend-production-e9b2.up.railway.app/api/auth/login
+  -v https://backend-base.up.railway.app/api/auth/login
 ```
 
 ---
