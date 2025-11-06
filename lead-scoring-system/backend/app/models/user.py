@@ -29,9 +29,13 @@ class User(Base):
     username: Mapped[str] = mapped_column(String(100), unique=True, nullable=False, index=True)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     full_name: Mapped[str] = mapped_column(String(255), nullable=False)
-    # Store as String to handle both ENUM and VARCHAR (Railway UI creates VARCHAR)
-    # Use property to convert to/from UserRole enum for compatibility
-    role: Mapped[str] = mapped_column(String(20), nullable=False, default="sales_rep")
+    # Use SQLEnum to properly handle PostgreSQL ENUM type
+    # The database has user_role ENUM type, so we need to use SQLEnum for proper casting
+    role: Mapped[str] = mapped_column(
+        SQLEnum(UserRole, name='user_role', create_type=False),
+        nullable=False,
+        default=UserRole.SALES_REP.value
+    )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(

@@ -102,7 +102,7 @@ def register_user(request: Request, user_data: UserCreate, db: Session = Depends
         username=user_data.username,
         full_name=user_data.full_name,
         hashed_password=hashed_password,
-        role=user_data.role.value,  # Store enum value as string
+        role=user_data.role,  # SQLEnum will handle the conversion to PostgreSQL ENUM
         company_role=sanitized_company_role,
     )
 
@@ -252,7 +252,7 @@ def google_auth(
                 username=username,
                 full_name=google_name or username,
                 hashed_password=hashed_password,  # Random password (not used for Google auth)
-                role=UserRole.SALES_REP.value,
+                role=UserRole.SALES_REP,  # SQLEnum will handle the conversion to PostgreSQL ENUM
                 profile_picture_url=google_picture,
                 last_login=datetime.utcnow(),
             )
