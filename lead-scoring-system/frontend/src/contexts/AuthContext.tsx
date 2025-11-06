@@ -74,6 +74,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Helper to test backend connectivity before making requests
+  const testBackendConnection = async (): Promise<{connected: boolean, error?: string}> => {
+    try {
+      // Test health endpoint (simpler, no auth required)
+      const healthUrl = API_BASE_URL.replace('/api', '/health.json');
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      
+      try {
+        const healthResponse = await fetch(healthUrl, {
+          method: 'GET',
+          mode: 'cors',
+          signal: controller.signal,
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (healthResponse.ok || healthResponse.status < 500) {
+          return { connected: true };
+        }
+        return { connected: false, error: `Health check returned ${healthResponse.status}` };
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    } catch (error: any) {
+      console.error("Backend health check failed:", error);
+      
+      // Determine specific error type
+      if (error.name === 'AbortError' || error.message?.includes('timeout')) {
+        return { connected: false, error: 'Backend request timed out. The backend may be slow or down.' };
+      } else if (error.message?.includes('Failed to fetch') || error.message?.includes('NetworkError')) {
+        return { connected: false, error: 'Cannot connect to backend. The backend may be down or unreachable.' };
+      } else if (error.message?.includes('CORS')) {
+        return { connected: false, error: 'CORS error: Backend is blocking requests from this origin.' };
+      }
+      return { connected: false, error: error.message || 'Unknown connection error' };
+    }
+  };
+
   const login = async (username: string, password: string) => {
     const formData = new FormData();
     formData.append("username", username);
@@ -82,9 +121,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       console.log("Attempting login to:", `${API_BASE_URL}/auth/login`);
       
+      // First, test backend connectivity
+      const connectionTest = await testBackendConnection();
+      if (!connectionTest.connected) {
+        throw new Error(
+          `Cannot connect to backend at ${API_BASE_URL.replace('/api', '')}. ${connectionTest.error || 'The backend may be down or unreachable.'} ` +
+          `Please check Railway deploy logs for the backend service.`
+        );
+      }
+      
       const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: "POST",
         body: formData,
+        mode: 'cors',
+        credentials: 'include',
       });
 
       console.log("Login response status:", response.status);
@@ -161,11 +211,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       console.log("Attempting registration to:", `${API_BASE_URL}/auth/register`);
       
+      // First, test backend connectivity
+      const connectionTest = await testBackendConnection();
+      if (!connectionTest.connected) {
+        throw new Error(
+          `Cannot connect to backend at ${API_BASE_URL.replace('/api', '')}. ${connectionTest.error || 'The backend may be down or unreachable.'} ` +
+          `Please check Railway deploy logs for the backend service.`
+        );
+      }
+      
       const response = await fetch(`${API_BASE_URL}/auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
+        mode: 'cors',
+        credentials: 'include',
         body: JSON.stringify({
           email: data.email,
           username: data.username,
