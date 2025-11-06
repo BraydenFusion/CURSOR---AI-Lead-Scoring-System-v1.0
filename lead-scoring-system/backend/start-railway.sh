@@ -94,6 +94,20 @@ else
     fi
 fi
 
+# CRITICAL: Ensure onboarding fields exist in users table
+echo ""
+echo "🔍 Verifying onboarding fields in users table..."
+if [ -f "ensure_onboarding_fields.py" ]; then
+    echo "📄 Running ensure_onboarding_fields.py..."
+    if python3 ensure_onboarding_fields.py; then
+        echo "✅ Onboarding fields verified/added successfully"
+    else
+        echo "⚠️  Onboarding fields verification had issues - check logs above"
+    fi
+else
+    echo "⚠️  ensure_onboarding_fields.py not found, skipping..."
+fi
+
 # CRITICAL: Ensure leads table exists (required for lead management)
 echo ""
 echo "🔍 Verifying leads table exists..."
