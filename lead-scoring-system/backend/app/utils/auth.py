@@ -8,6 +8,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
+import bcrypt
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -30,24 +31,59 @@ if settings.environment == "production" and SECRET_KEY == "DEV-ONLY-CHANGE-IN-PR
         "Set SECRET_KEY environment variable to a long random string."
     )
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Configure passlib with bcrypt, but disable bug detection to avoid 72-byte limit issues
+pwd_context = CryptContext(
+    schemes=["bcrypt"],
+    bcrypt__default_rounds=12,  # Cost factor
+    deprecated="auto",
+    # Disable wrap bug detection to avoid password length issues during initialization
+    bcrypt__ident="2b",  # Use bcrypt 2b format
+)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
 
+def _truncate_password_for_bcrypt(password: str) -> bytes:
+    """
+    Truncate password to 72 bytes for bcrypt compatibility.
+    Bcrypt has a hard 72-byte limit, so we must truncate before hashing.
+    """
+    password_bytes = password.encode('utf-8')
+    if len(password_bytes) > 72:
+        # Truncate to 72 bytes (safe as password strength is validated before this)
+        password_bytes = password_bytes[:72]
+    return password_bytes
+
+
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify password against hash."""
-    return pwd_context.verify(plain_password, hashed_password)
+    """Verify password against hash using bcrypt directly."""
+    # Truncate password before verification to match what was hashed
+    password_bytes = _truncate_password_for_bcrypt(plain_password)
+    # Use bcrypt directly for verification (consistent with hashing)
+    try:
+        return bcrypt.checkpw(password_bytes, hashed_password.encode('utf-8'))
+    except Exception:
+        # Fallback to passlib if bcrypt verification fails (for backwards compatibility)
+        return pwd_context.verify(password_bytes.decode('utf-8', errors='ignore'), hashed_password)
 
 
 def get_password_hash(password: str) -> str:
-    """Hash a password. Bcrypt has a 72-byte limit, so truncate if necessary."""
-    # Bcrypt has a 72-byte limit, so truncate password if it's longer
-    # This is safe because we validate password strength before hashing
-    password_bytes = password.encode('utf-8')
-    if len(password_bytes) > 72:
-        password_bytes = password_bytes[:72]
-        password = password_bytes.decode('utf-8', errors='ignore')
-    return pwd_context.hash(password)
+    """
+    Hash a password using bcrypt with proper 72-byte truncation.
+    
+    CRITICAL: Bcrypt has a hard 72-byte limit. We truncate the password
+    BEFORE passing it to bcrypt to avoid errors during passlib's bug detection.
+    """
+    # Truncate password to 72 bytes BEFORE hashing (critical for bcrypt)
+    password_bytes = _truncate_password_for_bcrypt(password)
+    password_str = password_bytes.decode('utf-8', errors='ignore')
+    
+    # Use bcrypt directly to avoid passlib's bug detection issues
+    # This ensures we control the truncation and avoid initialization errors
+    salt = bcrypt.gensalt(rounds=12)
+    hashed = bcrypt.hashpw(password_bytes, salt)
+    
+    # Return as string (bcrypt format starts with $2b$)
+    return hashed.decode('utf-8')
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
