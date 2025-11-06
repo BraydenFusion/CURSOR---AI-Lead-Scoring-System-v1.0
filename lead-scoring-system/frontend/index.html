@@ -7,14 +7,17 @@
   </head>
   <body>
     <div id="root"></div>
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/8.0/firebase.js"></script>
+    <!-- Firebase SDK - Using production build with only Auth module -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script>
-      var config = {
+      // Firebase configuration
+      var firebaseConfig = {
         apiKey: "AIzaSyCQfvpghMDKoakqKQ2tx67gjjEo6JnmAbA",
         authDomain: "ventrix-477422.firebaseapp.com",
       };
-      firebase.initializeApp(config);
+      // Initialize Firebase
+      firebase.initializeApp(firebaseConfig);
     </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>

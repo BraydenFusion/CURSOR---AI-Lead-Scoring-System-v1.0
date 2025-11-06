@@ -307,60 +307,96 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       
       const firebase = (window as any).firebase;
+      const auth = firebase.auth();
       const provider = new firebase.auth.GoogleAuthProvider();
       
-      // Sign in with Google
-      const result = await firebase.auth().signInWithPopup(provider);
-      const user = result.user;
+      // Use redirect flow instead of popup to avoid domain authorization issues
+      // Store the current URL so we can redirect back after authentication
+      const currentUrl = window.location.href;
+      sessionStorage.setItem('googleSignInReturnUrl', currentUrl);
       
-      // Get the ID token
-      const idToken = await user.getIdToken();
+      // Use redirect instead of popup
+      await auth.signInWithRedirect(provider);
       
-      // Send ID token to backend
-      const response = await fetch(`${API_BASE_URL}/auth/google`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        mode: 'cors',
-        credentials: 'include',
-        body: JSON.stringify({
-          id_token: idToken,
-        }),
-      });
-      
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ detail: "Google authentication failed" }));
-        throw new Error(error.detail || "Google authentication failed");
-      }
-      
-      const data = await response.json();
-      
-      if (!data.access_token) {
-        throw new Error("Invalid response from server: missing access token");
-      }
-      
-      // Store token and user info
-      localStorage.setItem("token", data.access_token);
-      setUser(data.user);
-      navigate("/dashboard");
+      // Note: The redirect will happen, so this code won't execute until after redirect
+      // We'll handle the result in a useEffect that checks for redirect result
     } catch (error: any) {
       console.error("Google Sign-In error:", error);
+      setIsLoading(false);
       
-      // Sign out from Firebase if there was an error
-      if (typeof window !== 'undefined' && (window as any).firebase) {
-        try {
-          await (window as any).firebase.auth().signOut();
-        } catch (e) {
-          // Ignore sign out errors
-        }
+      // Provide helpful error message
+      let errorMessage = "Google Sign-In failed";
+      
+      if (error.code === 'auth/unauthorized-domain') {
+        errorMessage = `This domain (${window.location.hostname}) is not authorized for Firebase. Please add it to Firebase Console → Authentication → Settings → Authorized domains.`;
+      } else if (error.message?.includes('not authorized')) {
+        errorMessage = `Domain authorization error: ${window.location.hostname} needs to be added to Firebase authorized domains. Go to Firebase Console → Authentication → Settings → Authorized domains and add your domain.`;
+      } else if (error.message) {
+        errorMessage = error.message;
       }
       
-      throw error;
-    } finally {
-      setIsLoading(false);
+      throw new Error(errorMessage);
     }
   };
+
+  // Handle Firebase redirect result
+  useEffect(() => {
+    const handleFirebaseRedirect = async () => {
+      try {
+        const firebase = (window as any).firebase;
+        if (!firebase) return;
+        
+        const auth = firebase.auth();
+        
+        // Check if we're returning from a redirect
+        const result = await auth.getRedirectResult();
+        
+        if (result.user) {
+          // User successfully signed in via redirect
+          const idToken = await result.user.getIdToken();
+          
+          // Send ID token to backend
+          const response = await fetch(`${API_BASE_URL}/auth/google`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            mode: 'cors',
+            credentials: 'include',
+            body: JSON.stringify({
+              id_token: idToken,
+            }),
+          });
+          
+          if (!response.ok) {
+            const error = await response.json().catch(() => ({ detail: "Google authentication failed" }));
+            throw new Error(error.detail || "Google authentication failed");
+          }
+          
+          const data = await response.json();
+          
+          if (!data.access_token) {
+            throw new Error("Invalid response from server: missing access token");
+          }
+          
+          // Store token and user info
+          localStorage.setItem("token", data.access_token);
+          setUser(data.user);
+          
+          // Redirect to dashboard or return URL
+          const returnUrl = sessionStorage.getItem('googleSignInReturnUrl') || '/dashboard';
+          sessionStorage.removeItem('googleSignInReturnUrl');
+          navigate(returnUrl);
+        }
+      } catch (error: any) {
+        console.error("Firebase redirect handling error:", error);
+        // Clear any stored return URL on error
+        sessionStorage.removeItem('googleSignInReturnUrl');
+      }
+    };
+    
+    handleFirebaseRedirect();
+  }, [navigate]);
 
   const logout = () => {
     // Sign out from Firebase if signed in
