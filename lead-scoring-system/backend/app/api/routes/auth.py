@@ -167,6 +167,124 @@ def login(
     }
 
 
+@router.post("/google", response_model=Token)
+@rate_limit_decorator
+def google_auth(
+    request: Request,
+    google_data: GoogleAuthRequest,
+    db: Session = Depends(get_db),
+):
+    """
+    Authenticate user with Google Sign-In.
+    Verifies the Google ID token and creates/updates user account.
+    """
+    try:
+        from google.auth.transport import requests
+        from google.oauth2 import id_token
+        from app.config import get_settings
+        
+        settings = get_settings()
+        
+        # Verify the Google ID token
+        try:
+            # Verify the token
+            idinfo = id_token.verify_oauth2_token(
+                google_data.id_token,
+                requests.Request(),
+                settings.google_client_id or "AIzaSyCQfvpghMDKoakqKQ2tx67gjjEo6JnmAbA"  # Use Firebase API key as client ID
+            )
+            
+            # Verify the issuer
+            if idinfo['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
+                raise ValueError('Wrong issuer.')
+            
+            # Extract user information
+            google_email = idinfo['email']
+            google_name = idinfo.get('name', '')
+            google_picture = idinfo.get('picture')
+            google_sub = idinfo['sub']  # Google user ID
+            
+        except ValueError as e:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"Invalid Google token: {str(e)}"
+            )
+        
+        # Check if user exists by email
+        user = db.query(User).filter(User.email == google_email).first()
+        
+        if user:
+            # Update user info if needed
+            if google_picture and not user.profile_picture_url:
+                user.profile_picture_url = google_picture
+            if google_name and user.full_name != google_name:
+                user.full_name = google_name
+            user.last_login = datetime.utcnow()
+            db.commit()
+            db.refresh(user)
+        else:
+            # Create new user from Google account
+            # Generate username from email (before @)
+            username_base = google_email.split('@')[0]
+            username = username_base
+            counter = 1
+            
+            # Ensure username is unique
+            while db.query(User).filter(User.username == username).first():
+                username = f"{username_base}{counter}"
+                counter += 1
+            
+            # Create user with Google account info
+            # Note: No password needed for Google-authenticated users
+            # We'll use a random secure password hash (user can't login with password)
+            import secrets
+            random_password = secrets.token_urlsafe(32)
+            hashed_password = get_password_hash(random_password)
+            
+            new_user = User(
+                email=google_email,
+                username=username,
+                full_name=google_name or username,
+                hashed_password=hashed_password,  # Random password (not used for Google auth)
+                role=UserRole.SALES_REP.value,
+                profile_picture_url=google_picture,
+                last_login=datetime.utcnow(),
+            )
+            
+            db.add(new_user)
+            db.commit()
+            db.refresh(new_user)
+            user = new_user
+        
+        # Create JWT token
+        access_token = create_access_token(
+            data={
+                "sub": str(user.id),
+                "username": user.username,
+                "role": user.get_role_enum().value,
+            }
+        )
+        
+        # Log successful login
+        from app.utils.audit import log_login_attempt
+        client_ip = request.client.host if request.client else "unknown"
+        log_login_attempt(user.username, success=True, ip_address=client_ip, method="google")
+        
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user": user,
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Google authentication failed: {str(e)}"
+        )
+
+
 @router.get("/me", response_model=UserResponse)
 def get_current_user_info(current_user: User = Depends(get_current_active_user)):
     """Get current user information."""
@@ -190,6 +308,12 @@ class ResetPasswordRequest(BaseModel):
 
     token: str
     new_password: str = Field(..., min_length=8, max_length=100)
+
+
+class GoogleAuthRequest(BaseModel):
+    """Schema for Google authentication request."""
+    
+    id_token: str = Field(..., description="Google ID token from Firebase")
 
 
 @router.post("/forgot-password")

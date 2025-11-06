@@ -22,6 +22,7 @@ interface AuthContextType {
   user: User | null;
   login: (username: string, password: string) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
+  googleSignIn: () => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -296,7 +297,79 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const googleSignIn = async () => {
+    setIsLoading(true);
+    
+    try {
+      // Check if Firebase is available
+      if (typeof window === 'undefined' || !(window as any).firebase) {
+        throw new Error("Firebase is not loaded. Please refresh the page.");
+      }
+      
+      const firebase = (window as any).firebase;
+      const provider = new firebase.auth.GoogleAuthProvider();
+      
+      // Sign in with Google
+      const result = await firebase.auth().signInWithPopup(provider);
+      const user = result.user;
+      
+      // Get the ID token
+      const idToken = await user.getIdToken();
+      
+      // Send ID token to backend
+      const response = await fetch(`${API_BASE_URL}/auth/google`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        mode: 'cors',
+        credentials: 'include',
+        body: JSON.stringify({
+          id_token: idToken,
+        }),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ detail: "Google authentication failed" }));
+        throw new Error(error.detail || "Google authentication failed");
+      }
+      
+      const data = await response.json();
+      
+      if (!data.access_token) {
+        throw new Error("Invalid response from server: missing access token");
+      }
+      
+      // Store token and user info
+      localStorage.setItem("token", data.access_token);
+      setUser(data.user);
+      navigate("/dashboard");
+    } catch (error: any) {
+      console.error("Google Sign-In error:", error);
+      
+      // Sign out from Firebase if there was an error
+      if (typeof window !== 'undefined' && (window as any).firebase) {
+        try {
+          await (window as any).firebase.auth().signOut();
+        } catch (e) {
+          // Ignore sign out errors
+        }
+      }
+      
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const logout = () => {
+    // Sign out from Firebase if signed in
+    if (typeof window !== 'undefined' && (window as any).firebase) {
+      (window as any).firebase.auth().signOut().catch(() => {
+        // Ignore errors
+      });
+    }
+    
     localStorage.removeItem("token");
     setUser(null);
     navigate("/login");
@@ -308,6 +381,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         login,
         register,
+        googleSignIn,
         logout,
         isAuthenticated: !!user,
         isLoading,
