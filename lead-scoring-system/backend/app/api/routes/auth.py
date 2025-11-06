@@ -167,6 +167,12 @@ def login(
     }
 
 
+class GoogleAuthRequest(BaseModel):
+    """Schema for Google authentication request."""
+    
+    id_token: str = Field(..., description="Google ID token from Firebase")
+
+
 @router.post("/google", response_model=Token)
 @rate_limit_decorator
 def google_auth(
@@ -308,12 +314,6 @@ class ResetPasswordRequest(BaseModel):
 
     token: str
     new_password: str = Field(..., min_length=8, max_length=100)
-
-
-class GoogleAuthRequest(BaseModel):
-    """Schema for Google authentication request."""
-    
-    id_token: str = Field(..., description="Google ID token from Firebase")
 
 
 @router.post("/forgot-password")

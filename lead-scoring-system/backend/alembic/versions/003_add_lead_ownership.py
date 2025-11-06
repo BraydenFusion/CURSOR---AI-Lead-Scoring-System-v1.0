@@ -31,6 +31,17 @@ def upgrade() -> None:
         print("⚠️  Run 000_initial migration first to create base tables.")
         return
     
+    # Check if created_by column already exists
+    columns = [col['name'] for col in inspector.get_columns('leads')]
+    
+    if 'created_by' in columns:
+        print("ℹ️  created_by column already exists. Skipping column addition.")
+        # Check if index exists, create if missing
+        indexes = [idx['name'] for idx in inspector.get_indexes('leads')]
+        if 'idx_leads_created_by' not in indexes:
+            op.create_index('idx_leads_created_by', 'leads', ['created_by'])
+        return
+    
     # Add created_by field to track which sales rep created the lead
     op.add_column('leads', sa.Column('created_by', UUID(as_uuid=True), sa.ForeignKey('users.id', ondelete='SET NULL'), nullable=True))
     op.create_index('idx_leads_created_by', 'leads', ['created_by'])
