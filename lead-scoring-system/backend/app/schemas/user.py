@@ -40,9 +40,20 @@ class UserResponse(UserBase):
     created_at: datetime
     last_login: datetime | None = None
     profile_picture_url: str | None = None
+    company_name: str | None = None
+    payment_plan: str | None = None
+    onboarding_completed: bool = False
 
     class Config:
         from_attributes = True
+
+
+class OnboardingComplete(BaseModel):
+    """Schema for completing onboarding."""
+
+    company_name: str = Field(..., min_length=1, max_length=255)
+    company_role: str = Field(..., min_length=1, max_length=100)
+    payment_plan: str = Field(..., min_length=1, max_length=50)
 
 
 class Token(BaseModel):

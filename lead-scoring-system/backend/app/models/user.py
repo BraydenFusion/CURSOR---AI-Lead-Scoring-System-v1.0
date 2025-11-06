@@ -44,6 +44,9 @@ class User(Base):
     last_login: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     profile_picture_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     company_role: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    company_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    payment_plan: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    onboarding_completed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     # Relationships
     assigned_leads = relationship(

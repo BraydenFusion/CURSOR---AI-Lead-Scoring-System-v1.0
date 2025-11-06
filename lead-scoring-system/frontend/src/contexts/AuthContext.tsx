@@ -8,6 +8,11 @@ interface User {
   full_name: string;
   role: "admin" | "manager" | "sales_rep";
   is_active: boolean;
+  company_name?: string | null;
+  company_role?: string | null;
+  payment_plan?: string | null;
+  onboarding_completed?: boolean;
+  profile_picture_url?: string | null;
 }
 
 interface RegisterData {
@@ -99,10 +104,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           localStorage.setItem("token", data.access_token);
           setUser(data.user);
           
-          // Redirect to dashboard or return URL
-          const returnUrl = sessionStorage.getItem('googleSignInReturnUrl') || '/dashboard';
-          sessionStorage.removeItem('googleSignInReturnUrl');
-          navigate(returnUrl);
+          // Check if user needs onboarding (new Google sign-up)
+          if (!data.user.onboarding_completed) {
+            // Redirect to onboarding page
+            navigate("/onboarding");
+            setIsLoading(false);
+            return;
+          }
+          
+          // Redirect to appropriate dashboard based on role
+          const returnUrl = sessionStorage.getItem('googleSignInReturnUrl');
+          if (returnUrl) {
+            sessionStorage.removeItem('googleSignInReturnUrl');
+            navigate(returnUrl);
+          } else {
+            // Redirect based on role
+            if (data.user.role === "sales_rep") {
+              navigate("/dashboard/sales-rep");
+            } else if (data.user.role === "manager") {
+              navigate("/dashboard/manager");
+            } else if (data.user.role === "admin") {
+              navigate("/dashboard/owner");
+            } else {
+              navigate("/dashboard");
+            }
+          }
           
           setIsLoading(false);
           return; // Don't check for stored token if we just authenticated
@@ -136,6 +162,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (response.ok) {
         const userData = await response.json();
         setUser(userData);
+        
+        // Redirect to onboarding if not completed (but not if already on onboarding page or auth pages)
+        const currentPath = window.location.pathname;
+        if (!userData.onboarding_completed && 
+            currentPath !== "/onboarding" && 
+            currentPath !== "/login" && 
+            currentPath !== "/register" &&
+            !currentPath.startsWith("/reset-password")) {
+          navigate("/onboarding");
+        }
       } else {
         localStorage.removeItem("token");
       }

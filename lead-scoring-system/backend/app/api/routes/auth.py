@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.user import User, UserRole
-from app.schemas.user import Token, UserCreate, UserResponse
+from app.schemas.user import Token, UserCreate, UserResponse, OnboardingComplete
 from app.utils.auth import (
     create_access_token,
     create_password_reset_token,
@@ -255,6 +255,7 @@ def google_auth(
                 role=UserRole.SALES_REP,  # SQLEnum will handle the conversion to PostgreSQL ENUM
                 profile_picture_url=google_picture,
                 last_login=datetime.utcnow(),
+                onboarding_completed=False,  # New Google sign-up users need onboarding
             )
             
             db.add(new_user)
@@ -295,6 +296,44 @@ def google_auth(
 def get_current_user_info(current_user: User = Depends(get_current_active_user)):
     """Get current user information."""
     return current_user
+
+
+@router.post("/onboarding/complete", response_model=UserResponse)
+@rate_limit_decorator
+def complete_onboarding(
+    request: Request,
+    onboarding_data: OnboardingComplete,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Complete onboarding for Google sign-up users.
+    Collects company name, company role, and payment plan.
+    """
+    from app.utils.security import sanitize_string
+    
+    try:
+        # Sanitize inputs
+        sanitized_company_name = sanitize_string(onboarding_data.company_name, max_length=255)
+        sanitized_company_role = sanitize_string(onboarding_data.company_role, max_length=100)
+        sanitized_payment_plan = sanitize_string(onboarding_data.payment_plan, max_length=50)
+        
+        # Update user with onboarding information
+        current_user.company_name = sanitized_company_name
+        current_user.company_role = sanitized_company_role
+        current_user.payment_plan = sanitized_payment_plan
+        current_user.onboarding_completed = True
+        
+        db.commit()
+        db.refresh(current_user)
+        
+        return current_user
+        
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Validation error: {str(e)}",
+        )
 
 
 @router.post("/logout")
