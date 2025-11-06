@@ -43,15 +43,87 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
+  // Handle Firebase redirect result FIRST (before checking stored token)
   useEffect(() => {
-    // Check for stored token on mount
-    const token = localStorage.getItem("token");
-    if (token) {
-      fetchCurrentUser(token);
-    } else {
-      setIsLoading(false);
-    }
-  }, []);
+    const handleFirebaseRedirect = async () => {
+      try {
+        const firebase = (window as any).firebase;
+        if (!firebase) {
+          // Firebase not loaded yet, check for stored token instead
+          const token = localStorage.getItem("token");
+          if (token) {
+            fetchCurrentUser(token);
+          } else {
+            setIsLoading(false);
+          }
+          return;
+        }
+        
+        const auth = firebase.auth();
+        
+        // Check if we're returning from a redirect
+        const result = await auth.getRedirectResult();
+        
+        if (result.user) {
+          console.log("✅ Google Sign-In redirect successful");
+          setIsLoading(true);
+          
+          // User successfully signed in via redirect
+          const idToken = await result.user.getIdToken();
+          
+          // Send ID token to backend
+          const response = await fetch(`${API_BASE_URL}/auth/google`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            mode: 'cors',
+            credentials: 'include',
+            body: JSON.stringify({
+              id_token: idToken,
+            }),
+          });
+          
+          if (!response.ok) {
+            const error = await response.json().catch(() => ({ detail: "Google authentication failed" }));
+            throw new Error(error.detail || "Google authentication failed");
+          }
+          
+          const data = await response.json();
+          
+          if (!data.access_token) {
+            throw new Error("Invalid response from server: missing access token");
+          }
+          
+          // Store token and user info
+          localStorage.setItem("token", data.access_token);
+          setUser(data.user);
+          
+          // Redirect to dashboard or return URL
+          const returnUrl = sessionStorage.getItem('googleSignInReturnUrl') || '/dashboard';
+          sessionStorage.removeItem('googleSignInReturnUrl');
+          navigate(returnUrl);
+          
+          setIsLoading(false);
+          return; // Don't check for stored token if we just authenticated
+        }
+      } catch (error: any) {
+        console.error("Firebase redirect handling error:", error);
+        // Clear any stored return URL on error
+        sessionStorage.removeItem('googleSignInReturnUrl');
+      }
+      
+      // If no redirect result, check for stored token
+      const token = localStorage.getItem("token");
+      if (token) {
+        fetchCurrentUser(token);
+      } else {
+        setIsLoading(false);
+      }
+    };
+    
+    handleFirebaseRedirect();
+  }, [navigate]);
 
   const fetchCurrentUser = async (token: string) => {
     try {
@@ -339,64 +411,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Handle Firebase redirect result
-  useEffect(() => {
-    const handleFirebaseRedirect = async () => {
-      try {
-        const firebase = (window as any).firebase;
-        if (!firebase) return;
-        
-        const auth = firebase.auth();
-        
-        // Check if we're returning from a redirect
-        const result = await auth.getRedirectResult();
-        
-        if (result.user) {
-          // User successfully signed in via redirect
-          const idToken = await result.user.getIdToken();
-          
-          // Send ID token to backend
-          const response = await fetch(`${API_BASE_URL}/auth/google`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            mode: 'cors',
-            credentials: 'include',
-            body: JSON.stringify({
-              id_token: idToken,
-            }),
-          });
-          
-          if (!response.ok) {
-            const error = await response.json().catch(() => ({ detail: "Google authentication failed" }));
-            throw new Error(error.detail || "Google authentication failed");
-          }
-          
-          const data = await response.json();
-          
-          if (!data.access_token) {
-            throw new Error("Invalid response from server: missing access token");
-          }
-          
-          // Store token and user info
-          localStorage.setItem("token", data.access_token);
-          setUser(data.user);
-          
-          // Redirect to dashboard or return URL
-          const returnUrl = sessionStorage.getItem('googleSignInReturnUrl') || '/dashboard';
-          sessionStorage.removeItem('googleSignInReturnUrl');
-          navigate(returnUrl);
-        }
-      } catch (error: any) {
-        console.error("Firebase redirect handling error:", error);
-        // Clear any stored return URL on error
-        sessionStorage.removeItem('googleSignInReturnUrl');
-      }
-    };
-    
-    handleFirebaseRedirect();
-  }, [navigate]);
 
   const logout = () => {
     // Sign out from Firebase if signed in
