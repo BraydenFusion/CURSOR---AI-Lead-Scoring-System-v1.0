@@ -401,6 +401,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (error.code === 'auth/unauthorized-domain') {
         errorMessage = `This domain (${window.location.hostname}) is not authorized for Firebase. Please add it to Firebase Console → Authentication → Settings → Authorized domains.`;
+      } else if (error.code === 'auth/operation-not-allowed') {
+        errorMessage = "Google Sign-In is not enabled. Please enable it in Firebase Console → Authentication → Sign-in method.";
+      } else if (error.message?.includes('redirect_uri_mismatch') || error.message?.includes('invalid request')) {
+        errorMessage = `OAuth redirect URI mismatch. Add these redirect URIs to Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client ID → Authorized redirect URIs:\n\n1. https://ventrix-477422.firebaseapp.com/__/auth/handler\n2. https://ventrix-477422.web.app/__/auth/handler\n3. ${window.location.origin}/__/auth/handler\n\nSee GOOGLE_OAUTH_FIX.md for detailed instructions.`;
       } else if (error.message?.includes('not authorized')) {
         errorMessage = `Domain authorization error: ${window.location.hostname} needs to be added to Firebase authorized domains. Go to Firebase Console → Authentication → Settings → Authorized domains and add your domain.`;
       } else if (error.message) {
