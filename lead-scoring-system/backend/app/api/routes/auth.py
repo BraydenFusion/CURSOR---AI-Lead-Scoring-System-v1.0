@@ -104,6 +104,7 @@ def register_user(request: Request, user_data: UserCreate, db: Session = Depends
         hashed_password=hashed_password,
         role=user_data.role,  # SQLEnum will handle the conversion to PostgreSQL ENUM
         company_role=sanitized_company_role,
+        onboarding_completed=True,  # Regular sign-up users provide info during registration, so onboarding is complete
     )
 
     db.add(new_user)
