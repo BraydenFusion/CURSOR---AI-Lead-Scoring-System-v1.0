@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { Button } from "../components/ui/button";
@@ -10,7 +10,23 @@ export function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { login, googleSignIn } = useAuth();
+  const { login, googleSignIn, user, isAuthenticated } = useAuth();
+  
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      // User is already logged in, redirect to dashboard
+      if (user.role === "sales_rep") {
+        window.location.href = "/dashboard/sales-rep";
+      } else if (user.role === "manager") {
+        window.location.href = "/dashboard/manager";
+      } else if (user.role === "admin") {
+        window.location.href = "/dashboard/owner";
+      } else {
+        window.location.href = "/dashboard";
+      }
+    }
+  }, [isAuthenticated, user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

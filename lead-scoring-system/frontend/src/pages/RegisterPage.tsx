@@ -22,7 +22,23 @@ export function RegisterPage() {
   });
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { register, googleSignIn } = useAuth();
+  const { register, googleSignIn, user, isAuthenticated } = useAuth();
+  
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      // User is already logged in, redirect to dashboard
+      if (user.role === "sales_rep") {
+        window.location.href = "/dashboard/sales-rep";
+      } else if (user.role === "manager") {
+        window.location.href = "/dashboard/manager";
+      } else if (user.role === "admin") {
+        window.location.href = "/dashboard/owner";
+      } else {
+        window.location.href = "/dashboard";
+      }
+    }
+  }, [isAuthenticated, user]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({

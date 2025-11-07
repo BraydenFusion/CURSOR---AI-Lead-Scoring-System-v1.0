@@ -54,10 +54,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const firebase = (window as any).firebase;
         if (!firebase) {
+          console.log("⚠️  Firebase not loaded yet, checking for stored token...");
           // Firebase not loaded yet, check for stored token instead
           const token = localStorage.getItem("token");
           if (token) {
-            fetchCurrentUser(token);
+            await fetchCurrentUser(token);
           } else {
             setIsLoading(false);
           }
@@ -67,83 +68,105 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const auth = firebase.auth();
         
         // Check if we're returning from a redirect
+        console.log("🔍 Checking for Firebase redirect result...");
         const result = await auth.getRedirectResult();
         
         if (result.user) {
-          console.log("✅ Google Sign-In redirect successful");
+          console.log("✅ Google Sign-In redirect successful, user:", result.user.email);
           setIsLoading(true);
           
-          // User successfully signed in via redirect
-          const idToken = await result.user.getIdToken();
-          
-          // Send ID token to backend
-          const response = await fetch(`${API_BASE_URL}/auth/google`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            mode: 'cors',
-            credentials: 'include',
-            body: JSON.stringify({
-              id_token: idToken,
-            }),
-          });
-          
-          if (!response.ok) {
-            const error = await response.json().catch(() => ({ detail: "Google authentication failed" }));
-            throw new Error(error.detail || "Google authentication failed");
-          }
-          
-          const data = await response.json();
-          
-          if (!data.access_token) {
-            throw new Error("Invalid response from server: missing access token");
-          }
-          
-          // Store token and user info
-          localStorage.setItem("token", data.access_token);
-          setUser(data.user);
-          
-          // Check if user needs onboarding (new Google sign-up)
-          if (!data.user.onboarding_completed) {
-            // Redirect to onboarding page
-            navigate("/onboarding");
-            setIsLoading(false);
-            return;
-          }
-          
-          // Redirect to appropriate dashboard based on role
-          const returnUrl = sessionStorage.getItem('googleSignInReturnUrl');
-          if (returnUrl) {
-            sessionStorage.removeItem('googleSignInReturnUrl');
-            navigate(returnUrl);
-          } else {
-            // Redirect based on role
-            if (data.user.role === "sales_rep") {
-              navigate("/dashboard/sales-rep");
-            } else if (data.user.role === "manager") {
-              navigate("/dashboard/manager");
-            } else if (data.user.role === "admin") {
-              navigate("/dashboard/owner");
-            } else {
-              navigate("/dashboard");
+          try {
+            // User successfully signed in via redirect
+            const idToken = await result.user.getIdToken();
+            console.log("✅ Got ID token from Firebase");
+            
+            // Send ID token to backend
+            console.log("📤 Sending ID token to backend...");
+            const response = await fetch(`${API_BASE_URL}/auth/google`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              mode: 'cors',
+              credentials: 'include',
+              body: JSON.stringify({
+                id_token: idToken,
+              }),
+            });
+            
+            if (!response.ok) {
+              const error = await response.json().catch(() => ({ detail: "Google authentication failed" }));
+              throw new Error(error.detail || "Google authentication failed");
             }
+            
+            const data = await response.json();
+            console.log("✅ Backend authentication successful, user role:", data.user?.role);
+            
+            if (!data.access_token) {
+              throw new Error("Invalid response from server: missing access token");
+            }
+            
+            // Store token and user info
+            localStorage.setItem("token", data.access_token);
+            setUser(data.user);
+            console.log("✅ User state updated, onboarding_completed:", data.user?.onboarding_completed);
+            
+            // Small delay to ensure state is updated before navigation
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            // Check if user needs onboarding (new Google sign-up)
+            if (!data.user.onboarding_completed) {
+              console.log("📝 User needs onboarding, redirecting to /onboarding");
+              navigate("/onboarding", { replace: true });
+              setIsLoading(false);
+              return;
+            }
+            
+            // Redirect to appropriate dashboard based on role
+            const returnUrl = sessionStorage.getItem('googleSignInReturnUrl');
+            if (returnUrl && returnUrl !== window.location.pathname) {
+              console.log("🔙 Redirecting to return URL:", returnUrl);
+              sessionStorage.removeItem('googleSignInReturnUrl');
+              navigate(returnUrl, { replace: true });
+            } else {
+              // Redirect based on role
+              let dashboardPath = "/dashboard";
+              if (data.user.role === "sales_rep") {
+                dashboardPath = "/dashboard/sales-rep";
+              } else if (data.user.role === "manager") {
+                dashboardPath = "/dashboard/manager";
+              } else if (data.user.role === "admin") {
+                dashboardPath = "/dashboard/owner";
+              }
+              console.log("🎯 Redirecting to dashboard:", dashboardPath);
+              navigate(dashboardPath, { replace: true });
+            }
+            
+            setIsLoading(false);
+            return; // Don't check for stored token if we just authenticated
+          } catch (authError: any) {
+            console.error("❌ Error during Google authentication:", authError);
+            setIsLoading(false);
+            // Don't throw - fall through to check for stored token
+            // This allows the user to try again or use regular login
           }
-          
-          setIsLoading(false);
-          return; // Don't check for stored token if we just authenticated
+        } else {
+          console.log("ℹ️  No Firebase redirect result found");
         }
       } catch (error: any) {
-        console.error("Firebase redirect handling error:", error);
+        console.error("❌ Firebase redirect handling error:", error);
         // Clear any stored return URL on error
         sessionStorage.removeItem('googleSignInReturnUrl');
+        // Don't set loading to false here - let it fall through to check token
       }
       
-      // If no redirect result, check for stored token
+      // If no redirect result or error occurred, check for stored token
       const token = localStorage.getItem("token");
       if (token) {
-        fetchCurrentUser(token);
+        console.log("🔑 Found stored token, fetching user...");
+        await fetchCurrentUser(token);
       } else {
+        console.log("ℹ️  No stored token, user not authenticated");
         setIsLoading(false);
       }
     };
