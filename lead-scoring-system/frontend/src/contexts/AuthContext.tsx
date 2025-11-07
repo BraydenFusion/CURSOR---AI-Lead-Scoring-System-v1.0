@@ -67,9 +67,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         const auth = firebase.auth();
         
+        // Wait a moment for Firebase to process the redirect result
+        // Sometimes Firebase needs a brief moment to process the redirect after page load
+        await new Promise(resolve => setTimeout(resolve, 200));
+        
         // Check if we're returning from a redirect
         console.log("🔍 Checking for Firebase redirect result...");
         const result = await auth.getRedirectResult();
+        
+        console.log("🔍 Redirect result:", result.user ? `User: ${result.user.email}` : "No user");
         
         if (result.user) {
           console.log("✅ Google Sign-In redirect successful, user:", result.user.email);
