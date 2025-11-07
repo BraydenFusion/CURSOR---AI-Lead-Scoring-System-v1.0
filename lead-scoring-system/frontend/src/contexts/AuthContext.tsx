@@ -185,6 +185,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (response.ok) {
         const userData = await response.json();
         setUser(userData);
+        console.log("✅ User fetched successfully, role:", userData.role);
         
         // Redirect to onboarding if not completed (but not if already on onboarding page or auth pages)
         const currentPath = window.location.pathname;
@@ -193,9 +194,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             currentPath !== "/login" && 
             currentPath !== "/register" &&
             !currentPath.startsWith("/reset-password")) {
-          navigate("/onboarding");
+          console.log("📝 Redirecting to onboarding from:", currentPath);
+          navigate("/onboarding", { replace: true });
+        } else if (currentPath === "/login" || currentPath === "/register") {
+          // If user is authenticated and on login/register page, redirect to dashboard
+          console.log("🔄 User authenticated on auth page, redirecting to dashboard");
+          let dashboardPath = "/dashboard";
+          if (userData.role === "sales_rep") {
+            dashboardPath = "/dashboard/sales-rep";
+          } else if (userData.role === "manager") {
+            dashboardPath = "/dashboard/manager";
+          } else if (userData.role === "admin") {
+            dashboardPath = "/dashboard/owner";
+          }
+          navigate(dashboardPath, { replace: true });
         }
       } else {
+        console.log("⚠️  Failed to fetch user, removing token");
         localStorage.removeItem("token");
       }
     } catch (error) {
@@ -442,15 +457,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const provider = new firebase.auth.GoogleAuthProvider();
       
       // Use redirect flow instead of popup to avoid domain authorization issues
-      // Store the current URL so we can redirect back after authentication
+      // Store the current URL and page type so we can redirect back after authentication
       const currentUrl = window.location.href;
+      const isSignUp = window.location.pathname === "/register";
       sessionStorage.setItem('googleSignInReturnUrl', currentUrl);
+      sessionStorage.setItem('googleSignInSource', isSignUp ? 'signup' : 'signin');
+      
+      console.log("🔄 Initiating Google Sign-In redirect from:", window.location.pathname);
       
       // Use redirect instead of popup
+      // This will redirect the user to Google, then back to our app
+      // The redirect result will be handled in the useEffect hook on page load
       await auth.signInWithRedirect(provider);
       
-      // Note: The redirect will happen, so this code won't execute until after redirect
-      // We'll handle the result in a useEffect that checks for redirect result
+      // Note: The redirect will happen immediately, so this code won't execute
+      // The redirect result will be handled in the useEffect hook when the page loads
     } catch (error: any) {
       console.error("Google Sign-In error:", error);
       setIsLoading(false);
