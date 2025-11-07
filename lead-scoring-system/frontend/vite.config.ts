@@ -17,7 +17,9 @@ export default defineConfig({
     // This specific domain is from your current deployment
     allowedHosts: [
       "cursor-ai-lead-scoring-system-v10-production-8d7f.up.railway.app",
+      "ventrix.tech",
       ".up.railway.app", // Try suffix pattern as fallback
+      ".ventrix.tech", // Allow subdomains of ventrix.tech
     ],
     strictPort: false,
   },

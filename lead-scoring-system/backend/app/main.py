@@ -64,6 +64,8 @@ def configure_cors(application: FastAPI) -> None:
     railway_frontend_domains = [
         "https://frontend-production-e9b2.up.railway.app",
         "https://cursor-ai-lead-scoring-system-v10-production-8d7f.up.railway.app",
+        "https://ventrix.tech",  # Production domain
+        "http://ventrix.tech",  # Allow HTTP for redirects
     ]
     
     # Add from environment if available
@@ -98,7 +100,7 @@ def configure_cors(application: FastAPI) -> None:
     application.add_middleware(
         CORSMiddleware,
         allow_origins=allow_origins if allow_origins else ["*"],  # Explicit origins (fallback to all in dev)
-        allow_origin_regex=r"https://.*\.up\.railway\.app|https://.*\.railway\.app",  # Allow ALL Railway domains via regex (PRIMARY)
+        allow_origin_regex=r"https://.*\.up\.railway\.app|https://.*\.railway\.app|https?://ventrix\.tech",  # Allow ALL Railway domains and ventrix.tech via regex
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"],
         allow_headers=["*"],

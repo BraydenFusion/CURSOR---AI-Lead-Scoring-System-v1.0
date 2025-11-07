@@ -34,7 +34,7 @@ class User(Base):
     role: Mapped[str] = mapped_column(
         SQLEnum(UserRole, name='user_role', create_type=False),
         nullable=False,
-        default=UserRole.SALES_REP
+        server_default='sales_rep'  # Use lowercase string value directly
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)

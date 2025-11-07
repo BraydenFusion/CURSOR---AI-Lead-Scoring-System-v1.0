@@ -97,12 +97,21 @@ def register_user(request: Request, user_data: UserCreate, db: Session = Depends
 
     # Create user with secure password hashing
     hashed_password = get_password_hash(user_data.password)
+    # CRITICAL: Always use enum VALUE (lowercase string like "sales_rep") not enum name
+    # The database enum expects lowercase: 'admin', 'manager', 'sales_rep'
+    # SQLAlchemy SQLEnum should convert it, but we'll ensure we pass the value explicitly
+    if isinstance(user_data.role, UserRole):
+        role_value = user_data.role.value  # This will be "sales_rep", "admin", or "manager" (lowercase)
+    else:
+        # If it's already a string, ensure it's lowercase
+        role_value = str(user_data.role).lower()
+    
     new_user = User(
         email=user_data.email,
         username=user_data.username,
         full_name=user_data.full_name,
         hashed_password=hashed_password,
-        role=user_data.role,  # SQLEnum will handle the conversion to PostgreSQL ENUM
+        role=role_value,  # Must be lowercase string: "admin", "manager", or "sales_rep"
         company_role=sanitized_company_role,
         onboarding_completed=True,  # Regular sign-up users provide info during registration, so onboarding is complete
     )
@@ -253,7 +262,7 @@ def google_auth(
                 username=username,
                 full_name=google_name or username,
                 hashed_password=hashed_password,  # Random password (not used for Google auth)
-                role=UserRole.SALES_REP,  # SQLEnum will handle the conversion to PostgreSQL ENUM
+                role=UserRole.SALES_REP.value,  # Use enum value (e.g., "sales_rep") not enum name
                 profile_picture_url=google_picture,
                 last_login=datetime.utcnow(),
                 onboarding_completed=False,  # New Google sign-up users need onboarding

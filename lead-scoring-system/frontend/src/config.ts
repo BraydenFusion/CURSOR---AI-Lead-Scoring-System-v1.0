@@ -3,7 +3,19 @@
  * This file handles API URL detection for both development and production
  */
 
-// Helper to detect if we're in Railway production
+// Helper to detect if we're in production
+function isProduction(): boolean {
+  if (typeof window === 'undefined') return false;
+  const hostname = window.location.hostname;
+  return (
+    hostname.includes('railway.app') ||
+    hostname.includes('.up.railway.app') ||
+    hostname === 'ventrix.tech' ||
+    hostname.includes('ventrix.tech')
+  );
+}
+
+// Helper to detect if we're in Railway production (legacy)
 function isRailwayProduction(): boolean {
   return (
     typeof window !== 'undefined' &&
@@ -82,7 +94,17 @@ async function getBackendUrl(): Promise<string> {
     }
   }
 
-  // Priority 3: Try to infer from Railway URL pattern and test each
+  // Priority 3: Check if we're on ventrix.tech domain
+  if (typeof window !== 'undefined' && 
+      (window.location.hostname === 'ventrix.tech' || window.location.hostname.includes('ventrix.tech'))) {
+    // Use backend-base for ventrix.tech domain
+    const backendUrl = 'https://backend-base.up.railway.app';
+    if (await testBackendUrl(backendUrl)) {
+      return `${backendUrl}/api`;
+    }
+  }
+  
+  // Priority 4: Try to infer from Railway URL pattern and test each
   if (isRailwayProduction()) {
     // Try multiple backend URL patterns - backend-base FIRST (most reliable)
     const backendUrls = [
@@ -179,8 +201,12 @@ export function getApiConfig(): { baseUrl: string } {
     if (import.meta.env.VITE_API_URL) {
       // Priority 1: Use build-time env var if available
       defaultUrl = import.meta.env.VITE_API_URL;
+    } else if (typeof window !== 'undefined' && 
+               (window.location.hostname === 'ventrix.tech' || window.location.hostname.includes('ventrix.tech'))) {
+      // Priority 2: Use backend-base for ventrix.tech domain
+      defaultUrl = 'https://backend-base.up.railway.app/api';
     } else if (isRailwayProduction()) {
-      // Priority 2: Use hardcoded backend-base (most reliable for this deployment)
+      // Priority 3: Use hardcoded backend-base (most reliable for this deployment)
       defaultUrl = 'https://backend-base.up.railway.app/api';
       
       // Fallback: Infer from frontend URL if needed
