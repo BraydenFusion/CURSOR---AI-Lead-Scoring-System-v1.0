@@ -83,8 +83,28 @@ class CORSFixMiddleware(BaseHTTPMiddleware):
         # Process the request
         response = await call_next(request)
         
-        # Ensure CORS headers are present (even if other middleware removed them)
-        add_cors_headers(response, origin)
+        # CRITICAL: Ensure CORS headers are present on ALL responses
+        # Check if CORS headers already exist - if not, add them
+        # If they exist but don't match the origin, update them
+        if "Access-Control-Allow-Origin" not in response.headers:
+            # No CORS headers - add them
+            add_cors_headers(response, origin)
+            if origin:
+                logger.debug(f"✅ CORS headers added for {request.url.path} from {origin}")
+        else:
+            # Headers exist - verify they're correct for this origin
+            existing_origin = response.headers.get("Access-Control-Allow-Origin")
+            if origin and is_origin_allowed(origin):
+                if existing_origin != origin and existing_origin != "*":
+                    # Update to match the request origin
+                    response.headers["Access-Control-Allow-Origin"] = origin
+                    response.headers["Access-Control-Allow-Credentials"] = "true"
+                    logger.debug(f"✅ CORS origin updated for {request.url.path}: {existing_origin} -> {origin}")
+            # Ensure other CORS headers are present
+            if "Access-Control-Allow-Methods" not in response.headers:
+                response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD"
+            if "Access-Control-Allow-Headers" not in response.headers:
+                response.headers["Access-Control-Allow-Headers"] = "*"
         
         return response
 
