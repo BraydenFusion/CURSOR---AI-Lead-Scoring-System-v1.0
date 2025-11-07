@@ -25,7 +25,8 @@ class RequestLimitsMiddleware(BaseHTTPMiddleware):
                     logger.warning(
                         f"Request too large: {size} bytes from {request.client.host if request.client else 'unknown'}"
                     )
-                    return JSONResponse(
+                    origin = request.headers.get("origin")
+                    response = JSONResponse(
                         status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
                         content={
                             "detail": f"Request body too large. Maximum size: {MAX_REQUEST_SIZE // 1024}KB",
@@ -33,6 +34,13 @@ class RequestLimitsMiddleware(BaseHTTPMiddleware):
                             "max_size_kb": MAX_REQUEST_SIZE // 1024,
                         },
                     )
+                    # Add CORS headers to error response
+                    if origin:
+                        response.headers["Access-Control-Allow-Origin"] = origin
+                        response.headers["Access-Control-Allow-Credentials"] = "true"
+                    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD"
+                    response.headers["Access-Control-Allow-Headers"] = "*"
+                    return response
             except ValueError:
                 # Invalid content-length header, let it through
                 pass

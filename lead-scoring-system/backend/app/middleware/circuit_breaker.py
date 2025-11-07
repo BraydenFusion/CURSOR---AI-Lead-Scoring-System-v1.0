@@ -96,13 +96,21 @@ class CircuitBreakerMiddleware(BaseHTTPMiddleware):
         # Check circuit breaker before processing
         if not circuit_breaker.should_allow():
             logger.warning(f"Circuit breaker OPEN: Rejecting request to {request.url.path}")
-            return JSONResponse(
+            origin = request.headers.get("origin")
+            response = JSONResponse(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 content={
                     "detail": "Database service temporarily unavailable. Please try again in a moment.",
                     "type": "circuit_breaker_open",
                 },
             )
+            # Add CORS headers to circuit breaker response
+            if origin:
+                response.headers["Access-Control-Allow-Origin"] = origin
+                response.headers["Access-Control-Allow-Credentials"] = "true"
+            response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD"
+            response.headers["Access-Control-Allow-Headers"] = "*"
+            return response
         
         try:
             response = await call_next(request)

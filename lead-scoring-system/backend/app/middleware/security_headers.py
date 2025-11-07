@@ -11,6 +11,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         response = await call_next(request)
         
+        # CRITICAL: Never overwrite CORS headers - preserve them if they exist
+        # CORS headers are set by CORSFixMiddleware and must not be removed
+        
         # Content Security Policy - Allow same origin and trusted sources
         # Adjust as needed for your frontend domain
         csp = (

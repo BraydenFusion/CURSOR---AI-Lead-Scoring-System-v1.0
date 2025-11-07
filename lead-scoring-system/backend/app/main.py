@@ -17,6 +17,7 @@ from .middleware.request_limits import RequestLimitsMiddleware
 from .middleware.request_validation import RequestValidationMiddleware
 from .middleware.connection_pool_monitor import ConnectionPoolMonitor
 from .middleware.circuit_breaker import CircuitBreakerMiddleware
+from .middleware.cors_fix import CORSFixMiddleware
 from .middleware.error_handler import (
     database_exception_handler,
     global_exception_handler,
@@ -926,6 +927,7 @@ async def startup_event():
 # Configure middleware (order matters - add security and monitoring first)
 # IMPORTANT: CORS must be added BEFORE SecurityHeadersMiddleware to avoid conflicts
 configure_cors(app)  # CORS first - before other middleware
+app.add_middleware(CORSFixMiddleware)  # CORS fix - ensures headers are never lost (runs AFTER CORS)
 app.add_middleware(RequestValidationMiddleware)  # Validate requests first
 app.add_middleware(SecurityHeadersMiddleware)  # Security headers
 app.add_middleware(CircuitBreakerMiddleware)  # Protect against cascade failures
