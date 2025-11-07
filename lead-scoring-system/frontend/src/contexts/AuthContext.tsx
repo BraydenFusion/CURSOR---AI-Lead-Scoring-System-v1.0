@@ -158,11 +158,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         } else {
           console.log("ℹ️  No Firebase redirect result found");
+          
+          // Check if we're on a page that might have Google redirect params
+          // Sometimes Firebase redirects go through a handler page first
+          const urlParams = new URLSearchParams(window.location.search);
+          const hash = window.location.hash;
+          const hasGoogleParams = urlParams.has('code') || urlParams.has('state') || 
+                                  hash.includes('access_token') || hash.includes('id_token') ||
+                                  hash.includes('authuser') || hash.includes('prompt');
+          
+          if (hasGoogleParams) {
+            console.log("⚠️  Detected potential Google redirect params, waiting and retrying...");
+            // Wait a bit more for Firebase to process - sometimes it takes time
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            try {
+              const retryResult = await auth.getRedirectResult();
+              if (retryResult.user) {
+                console.log("✅ Got redirect result on retry!");
+                // Reload to process the result properly
+                window.location.reload();
+                return;
+              }
+            } catch (retryError) {
+              console.error("❌ Retry also failed:", retryError);
+            }
+          }
         }
       } catch (error: any) {
         console.error("❌ Firebase redirect handling error:", error);
         // Clear any stored return URL on error
         sessionStorage.removeItem('googleSignInReturnUrl');
+        sessionStorage.removeItem('googleSignInSource');
         // Don't set loading to false here - let it fall through to check token
       }
       
