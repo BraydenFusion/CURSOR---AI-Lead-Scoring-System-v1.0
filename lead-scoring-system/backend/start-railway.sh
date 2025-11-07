@@ -124,6 +124,21 @@ else
     echo "⚠️  Run create_leads_table_railway.py manually if needed"
 fi
 
+# Create Brayden's account if it doesn't exist
+echo ""
+echo "👤 Creating/updating Brayden's Sales Rep account..."
+if [ -f "create_brayden_account_railway.py" ]; then
+    echo "📄 Running create_brayden_account_railway.py..."
+    if python3 create_brayden_account_railway.py; then
+        echo "✅ Brayden's account ready"
+    else
+        echo "⚠️  Account creation had issues - check logs above"
+        echo "⚠️  Account may already exist or database connection issue"
+    fi
+else
+    echo "⚠️  create_brayden_account_railway.py not found, skipping..."
+fi
+
 # Get PORT from environment, default to 8000 if not set
 PORT=${PORT:-8000}
 
