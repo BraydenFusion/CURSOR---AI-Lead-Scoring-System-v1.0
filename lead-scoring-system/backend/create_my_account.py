@@ -17,7 +17,7 @@ import json
 # Default credentials for Brayden's account
 DEFAULT_USERNAME = "brayden"
 DEFAULT_EMAIL = "bsaundersjones@gmail.com"
-DEFAULT_PASSWORD = "BraydenSecure123!@"
+DEFAULT_PASSWORD = "Brayden@Secure2024!"
 DEFAULT_FULL_NAME = "Brayden Saunders-Jones"
 DEFAULT_COMPANY_ROLE = "VP Sales"
 

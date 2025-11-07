@@ -15,7 +15,7 @@ curl -X POST "https://backend-base.up.railway.app/api/auth/register" \
     "email": "bsaundersjones@gmail.com",
     "username": "brayden",
     "full_name": "Brayden Saunders-Jones",
-    "password": "BraydenSecure123!@",
+    "password": "Brayden@Secure2024!",
     "company_role": "VP Sales",
     "role": "sales_rep"
   }'
@@ -37,7 +37,7 @@ python3 create_my_account.py
    - **Email:** bsaundersjones@gmail.com
    - **Username:** brayden
    - **Full Name:** Brayden Saunders-Jones
-   - **Password:** BraydenSecure123!@
+   - **Password:** Brayden@Secure2024!
    - **Company Role:** VP Sales
 
 ## Your Login Credentials
@@ -45,7 +45,7 @@ python3 create_my_account.py
 After account creation, use these credentials to log in:
 
 - **Username:** `brayden`
-- **Password:** `BraydenSecure123!@`
+- **Password:** `Brayden@Secure2024!`
 - **Email:** `bsaundersjones@gmail.com`
 - **Role:** Sales Rep
 - **Dashboard:** `/dashboard/sales-rep`
