@@ -17,13 +17,14 @@ logger = logging.getLogger(__name__)
 
 def _add_cors_headers(response: JSONResponse, request: Request) -> JSONResponse:
     """Add CORS headers to response to ensure frontend can read error messages."""
+    import re
     origin = request.headers.get("origin")
     if origin:
-        # Check if origin is allowed (Railway domains)
-        if origin.endswith(".up.railway.app") or origin.endswith(".railway.app"):
-            response.headers["Access-Control-Allow-Origin"] = origin
-            response.headers["Access-Control-Allow-Credentials"] = "true"
-        elif origin == "http://localhost:5173":
+        # Check if origin is allowed (Railway domains, ventrix.tech, or localhost)
+        if (origin.endswith(".up.railway.app") or 
+            origin.endswith(".railway.app") or
+            re.match(r"https?://ventrix\.tech", origin) or
+            origin == "http://localhost:5173"):
             response.headers["Access-Control-Allow-Origin"] = origin
             response.headers["Access-Control-Allow-Credentials"] = "true"
     else:

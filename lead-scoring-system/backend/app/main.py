@@ -54,8 +54,12 @@ except Exception:
     pass
 
 
+# Store CORS origins globally for OPTIONS handler
+_cors_allow_origins = []
+
 def configure_cors(application: FastAPI) -> None:
     """Configure CORS based on environment - ALWAYS allows Railway frontend domains."""
+    global _cors_allow_origins
 
     # Start with settings or defaults
     allow_origins = list(settings.cors_origins) if settings.cors_origins else []
@@ -90,9 +94,12 @@ def configure_cors(application: FastAPI) -> None:
         if "http://localhost:5173" not in allow_origins:
             allow_origins.append("http://localhost:5173")
     
+    # Store globally for OPTIONS handler
+    _cors_allow_origins = allow_origins.copy()
+    
     logger.info(f"🌐 CORS Configuration:")
     logger.info(f"   Allowed origins: {allow_origins}")
-    logger.info(f"   Regex pattern: https://.*\\.up\\.railway\\.app")
+    logger.info(f"   Regex pattern: https://.*\\.up\\.railway\\.app|https://.*\\.railway\\.app|https?://ventrix\\.tech")
     
     # Use FastAPI's built-in CORS middleware
     # CRITICAL: Use both explicit origins AND regex pattern for Railway
@@ -171,15 +178,21 @@ def configure_routers(application: FastAPI) -> None:
         # Check if origin is allowed (same logic as CORS middleware)
         allowed_origin = None
         if origin:
-            # Check against explicit origins
-            if origin in allow_origins:
+            # Check against explicit origins (use global variable)
+            if origin in _cors_allow_origins:
                 allowed_origin = origin
-            # Check against regex pattern for Railway
-            elif re.match(r"https://.*\.up\.railway\.app|https://.*\.railway\.app", origin):
+                logger.info(f"✅ Origin allowed (explicit): {origin}")
+            # Check against regex pattern for Railway and ventrix.tech
+            elif re.match(r"https://.*\.up\.railway\.app|https://.*\.railway\.app|https?://ventrix\.tech", origin):
                 allowed_origin = origin
+                logger.info(f"✅ Origin allowed (regex): {origin}")
+            else:
+                logger.warning(f"⚠️  Origin not allowed: {origin}")
         
         # Use origin if allowed, otherwise use * (for development)
         cors_origin = allowed_origin if allowed_origin else (origin if origin else "*")
+        
+        logger.info(f"📤 Sending CORS headers with origin: {cors_origin}")
         
         return JSONResponse(
             content={"message": "CORS preflight"},
