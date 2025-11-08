@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 # Allowed origins patterns
 RAILWAY_PATTERN = re.compile(r"https://.*\.up\.railway\.app|https://.*\.railway\.app")
-VENTRIX_PATTERN = re.compile(r"https?://ventrix\.tech")
+VENTRIX_PATTERN = re.compile(r"https?://(?:[\w-]+\.)?ventrix\.tech")
 LOCALHOST_PATTERN = re.compile(r"http://localhost:\d+")
 
 # Explicit allowed origins
@@ -23,6 +23,10 @@ EXPLICIT_ORIGINS = [
     "https://cursor-ai-lead-scoring-system-v10-production-8d7f.up.railway.app",
     "https://ventrix.tech",
     "http://ventrix.tech",
+    "https://www.ventrix.tech",
+    "http://www.ventrix.tech",
+    "https://app.ventrix.tech",
+    "http://app.ventrix.tech",
     "http://localhost:5173",
 ]
 

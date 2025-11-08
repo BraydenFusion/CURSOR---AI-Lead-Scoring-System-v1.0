@@ -71,6 +71,10 @@ def configure_cors(application: FastAPI) -> None:
         "https://cursor-ai-lead-scoring-system-v10-production-8d7f.up.railway.app",
         "https://ventrix.tech",  # Production domain
         "http://ventrix.tech",  # Allow HTTP for redirects
+        "https://www.ventrix.tech",
+        "http://www.ventrix.tech",
+        "https://app.ventrix.tech",
+        "http://app.ventrix.tech",
     ]
     
     # Add from environment if available
@@ -100,7 +104,9 @@ def configure_cors(application: FastAPI) -> None:
     
     logger.info(f"🌐 CORS Configuration:")
     logger.info(f"   Allowed origins: {allow_origins}")
-    logger.info(f"   Regex pattern: https://.*\\.up\\.railway\\.app|https://.*\\.railway\\.app|https?://ventrix\\.tech")
+    logger.info(
+        "   Regex pattern: https://.*\\.up\\.railway\\.app|https://.*\\.railway\\.app|https?://(?:[\\w-]+\\.)?ventrix\\.tech"
+    )
     
     # Use FastAPI's built-in CORS middleware
     # CRITICAL: Use both explicit origins AND regex pattern for Railway
@@ -108,7 +114,7 @@ def configure_cors(application: FastAPI) -> None:
     application.add_middleware(
         CORSMiddleware,
         allow_origins=allow_origins if allow_origins else ["*"],  # Explicit origins (fallback to all in dev)
-        allow_origin_regex=r"https://.*\.up\.railway\.app|https://.*\.railway\.app|https?://ventrix\.tech",  # Allow ALL Railway domains and ventrix.tech via regex
+        allow_origin_regex=r"https://.*\.up\.railway\.app|https://.*\.railway\.app|https?://(?:[\w-]+\.)?ventrix\.tech",  # Allow ALL Railway domains and ventrix.tech via regex
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"],
         allow_headers=["*"],
@@ -184,7 +190,7 @@ def configure_routers(application: FastAPI) -> None:
                 allowed_origin = origin
                 logger.info(f"✅ Origin allowed (explicit): {origin}")
             # Check against regex pattern for Railway and ventrix.tech
-            elif re.match(r"https://.*\.up\.railway\.app|https://.*\.railway\.app|https?://ventrix\.tech", origin):
+            elif re.match(r"https://.*\.up\.railway\.app|https://.*\.railway\.app|https?://(?:[\w-]+\.)?ventrix\.tech", origin):
                 allowed_origin = origin
                 logger.info(f"✅ Origin allowed (regex): {origin}")
             else:
