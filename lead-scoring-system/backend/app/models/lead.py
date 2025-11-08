@@ -1,11 +1,13 @@
 """Lead SQLAlchemy model definition."""
 
+from __future__ import annotations
+
 from datetime import datetime
 from typing import Any, Dict, List, Optional
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from sqlalchemy import CheckConstraint, Column, DateTime, Enum, ForeignKey, Index, Integer, String, Enum as SQLEnum
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..database import Base
@@ -32,7 +34,7 @@ class Lead(Base):
 
     __tablename__ = "leads"
 
-    id: Mapped[uuid4] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     phone: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
@@ -41,15 +43,17 @@ class Lead(Base):
     current_score: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     classification: Mapped[Optional[str]] = mapped_column(LeadClassification, nullable=True)
     status: Mapped[LeadStatus] = mapped_column(SQLEnum(LeadStatus), default=LeadStatus.NEW, nullable=False)
-    contacted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-    qualified_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-    closed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    contacted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    qualified_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    closed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
     )
     # Track which user (sales rep) created this lead
-    created_by: Mapped[Optional[uuid4]] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_by: Mapped[Optional[UUID]] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
     # Map to 'metadata' column using private attribute to avoid SQLAlchemy reserved name conflict
     # Access via ._metadata in code, or use getattr/setattr with 'metadata' key
     _metadata: Mapped[Dict[str, Any]] = mapped_column("metadata", JSONB, default=dict, nullable=False)

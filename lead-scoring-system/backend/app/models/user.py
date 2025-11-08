@@ -2,11 +2,12 @@
 
 from datetime import datetime
 from enum import Enum
-from uuid import uuid4
+from typing import Optional
+from uuid import UUID, uuid4
 
 from sqlalchemy import Boolean, Column, DateTime, String
 from sqlalchemy import Enum as SQLEnum
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..database import Base
@@ -25,7 +26,7 @@ class User(Base):
 
     __tablename__ = "users"
 
-    id: Mapped[uuid4] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
     username: Mapped[str] = mapped_column(String(100), unique=True, nullable=False, index=True)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -42,11 +43,11 @@ class User(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
     )
-    last_login: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-    profile_picture_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
-    company_role: Mapped[str | None] = mapped_column(String(100), nullable=True)
-    company_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    payment_plan: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    last_login: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    profile_picture_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    company_role: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    company_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    payment_plan: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     onboarding_completed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     # Relationships

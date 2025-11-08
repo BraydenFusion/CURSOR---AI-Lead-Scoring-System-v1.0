@@ -2,10 +2,11 @@
 
 from datetime import datetime
 from enum import Enum
-from uuid import uuid4
+from typing import Optional
+from uuid import UUID, uuid4
 
 from sqlalchemy import Boolean, DateTime, Enum as SQLEnum, ForeignKey, String, Text
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..database import Base
@@ -26,14 +27,14 @@ class Notification(Base):
 
     __tablename__ = "notifications"
 
-    id: Mapped[uuid4] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    user_id: Mapped[uuid4] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    user_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
     notification_type: Mapped[NotificationType] = mapped_column(SQLEnum(NotificationType), nullable=False)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     message: Mapped[str] = mapped_column(Text, nullable=False)
-    link: Mapped[str | None] = mapped_column(String(255), nullable=True)  # Link to related resource
+    link: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)  # Link to related resource
     is_read: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
