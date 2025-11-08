@@ -6,6 +6,7 @@ from .routes import (
     activities_router,
     assignments_router,
     auth_router,
+    analytics_router,
     dashboard_router,
     leads_router,
     notes_router,
@@ -34,6 +35,7 @@ router.include_router(dashboard_router, prefix="/dashboard", tags=["dashboard"])
 router.include_router(assignments_router, prefix="/assignments", tags=["assignments"])
 router.include_router(notes_router, prefix="/notes", tags=["notes"])
 router.include_router(notifications_router, prefix="/notifications", tags=["notifications"])
+router.include_router(analytics_router, prefix="/analytics", tags=["analytics"])
 
 # Include debug router if available
 if debug_router:

@@ -7,6 +7,7 @@ import {
   ClipboardList,
   Settings,
   BarChart3,
+  TrendingUp,
   Home,
 } from "lucide-react";
 import clsx from "clsx";
@@ -41,10 +42,31 @@ export function Sidebar({ onNavigate, className }: SidebarProps) {
   const navItems = useMemo<NavItem[]>(() => {
     const items: NavItem[] = [
       { label: "Dashboard", icon: LayoutDashboard, to: getDashboardPath(user?.role) },
-      { label: "My Leads", icon: ClipboardList, to: "/my-leads", roles: ["sales_rep", "manager", "admin"] },
+      {
+        label: "My Leads",
+        icon: ClipboardList,
+        to: "/my-leads",
+        roles: ["sales_rep", "manager", "admin"] as Array<"admin" | "manager" | "sales_rep">,
+      },
       { label: "Lead Directory", icon: Briefcase, to: "/dashboard/legacy" },
-      { label: "Team Performance", icon: BarChart3, to: "/dashboard/manager", roles: ["manager", "admin"] },
-      { label: "Administration", icon: Users, to: "/dashboard/owner", roles: ["admin"] },
+      {
+        label: "Team Performance",
+        icon: BarChart3,
+        to: "/dashboard/manager",
+        roles: ["manager", "admin"] as Array<"admin" | "manager" | "sales_rep">,
+      },
+      {
+        label: "Analytics",
+        icon: TrendingUp,
+        to: "/dashboard/analytics",
+        roles: ["manager", "admin"] as Array<"admin" | "manager" | "sales_rep">,
+      },
+      {
+        label: "Administration",
+        icon: Users,
+        to: "/dashboard/owner",
+        roles: ["admin"] as Array<"admin" | "manager" | "sales_rep">,
+      },
       { label: "Settings", icon: Settings, to: "/settings" },
     ];
 
