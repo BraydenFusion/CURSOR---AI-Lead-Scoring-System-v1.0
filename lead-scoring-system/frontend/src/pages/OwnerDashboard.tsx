@@ -169,16 +169,28 @@ export function OwnerDashboard() {
           <div className="border-b border-slate-200 px-6 py-4">
             <h2 className="text-xl font-bold text-slate-900">Top Performing Sales Reps</h2>
           </div>
-          <div className="overflow-x-auto">
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">Rank</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">Sales Rep</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">Total Leads</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">Hot Leads</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">Avg Score</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">Conversion Rate</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">
+                    Rank
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">
+                    Sales Rep
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">
+                    Total Leads
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">
+                    Hot Leads
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">
+                    Avg Score
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">
+                    Conversion Rate
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 bg-white">
@@ -206,6 +218,45 @@ export function OwnerDashboard() {
               <div className="px-6 py-12 text-center text-slate-500">No performance data yet.</div>
             )}
           </div>
+
+          <div className="block md:hidden">
+            {dashboardData?.top_performers.length === 0 ? (
+              <div className="px-4 py-8 text-center text-slate-500">No performance data yet.</div>
+            ) : (
+              <div className="space-y-4 p-4">
+                {dashboardData?.top_performers.map((rep, index) => (
+                  <div key={rep.rep.id} className="rounded-lg border border-slate-200 p-4 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="rounded-full bg-navy-50 px-2 py-1 text-xs font-semibold text-navy-700">
+                        #{index + 1}
+                      </span>
+                      <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                        {rep.conversion_rate.toFixed(1)}% conversion
+                      </span>
+                    </div>
+                    <div className="mt-3">
+                      <p className="text-base font-semibold text-slate-900">{rep.rep.name}</p>
+                      <p className="text-sm text-slate-500">{rep.rep.email}</p>
+                    </div>
+                    <div className="mt-4 grid grid-cols-2 gap-3 text-sm text-slate-600">
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-slate-400">Total Leads</p>
+                        <p className="font-semibold text-slate-900">{rep.total_leads}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-slate-400">Hot Leads</p>
+                        <p className="font-semibold text-red-600">{rep.hot_leads}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-slate-400">Average Score</p>
+                        <p className="font-semibold text-navy-600">{rep.average_score.toFixed(1)}/100</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Source Breakdown */}
@@ -228,16 +279,28 @@ export function OwnerDashboard() {
           <div className="border-b border-slate-200 px-6 py-4">
             <h2 className="text-xl font-bold text-slate-900">Recent Leads</h2>
           </div>
-          <div className="overflow-x-auto">
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">Email</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">Score</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">Source</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">Created</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">
+                    Name
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">
+                    Email
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">
+                    Score
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">
+                    Source
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">
+                    Created
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 bg-white">
@@ -246,7 +309,11 @@ export function OwnerDashboard() {
                     <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-slate-900">{lead.name}</td>
                     <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-600">{lead.email}</td>
                     <td className="whitespace-nowrap px-6 py-4 text-sm">
-                      <span className={`font-bold ${lead.score >= 80 ? "text-red-600" : lead.score >= 50 ? "text-yellow-600" : "text-navy-600"}`}>
+                      <span
+                        className={`font-bold ${
+                          lead.score >= 80 ? "text-red-600" : lead.score >= 50 ? "text-yellow-600" : "text-navy-600"
+                        }`}
+                      >
                         {lead.score}/100
                       </span>
                     </td>
@@ -273,6 +340,60 @@ export function OwnerDashboard() {
             </table>
             {dashboardData?.recent_leads.length === 0 && (
               <div className="px-6 py-12 text-center text-slate-500">No recent leads.</div>
+            )}
+          </div>
+
+          <div className="block md:hidden">
+            {dashboardData?.recent_leads.length === 0 ? (
+              <div className="px-4 py-8 text-center text-slate-500">No recent leads.</div>
+            ) : (
+              <div className="space-y-4 p-4">
+                {dashboardData?.recent_leads.map((lead) => (
+                  <div key={lead.id} className="rounded-lg border border-slate-200 p-4 shadow-sm">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-base font-semibold text-slate-900">{lead.name}</p>
+                        <p className="text-sm text-slate-500">{lead.email}</p>
+                      </div>
+                      <span
+                        className={`rounded-full px-2 py-1 text-xs font-semibold ${
+                          lead.classification === "hot"
+                            ? "bg-red-100 text-red-800"
+                            : lead.classification === "warm"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : "bg-blue-100 text-blue-800"
+                        }`}
+                      >
+                        {lead.classification?.toUpperCase() || "N/A"}
+                      </span>
+                    </div>
+                    <div className="mt-4 grid grid-cols-2 gap-3 text-sm text-slate-600">
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-slate-400">Score</p>
+                        <p
+                          className={`text-lg font-bold ${
+                            lead.score >= 80 ? "text-red-600" : lead.score >= 50 ? "text-yellow-600" : "text-navy-600"
+                          }`}
+                        >
+                          {lead.score}/100
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-slate-400">Status</p>
+                        <p className="font-medium capitalize">{lead.status}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-slate-400">Source</p>
+                        <p className="font-medium">{lead.source}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-slate-400">Created</p>
+                        <p className="font-medium">{new Date(lead.created_at).toLocaleDateString()}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         </div>

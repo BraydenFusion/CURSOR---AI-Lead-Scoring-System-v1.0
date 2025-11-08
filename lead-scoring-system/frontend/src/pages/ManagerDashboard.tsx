@@ -139,17 +139,31 @@ export function ManagerDashboard() {
           <div className="border-b border-slate-200 px-6 py-4">
             <h2 className="text-xl font-bold text-slate-900">Sales Rep Performance</h2>
           </div>
-          <div className="overflow-x-auto">
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">Sales Rep</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">Email</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">Total Leads</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">Hot</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">Warm</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">Cold</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">Avg Score</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">
+                    Sales Rep
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">
+                    Email
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">
+                    Total Leads
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">
+                    Hot
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">
+                    Warm
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">
+                    Cold
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">
+                    Avg Score
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 bg-white">
@@ -176,6 +190,46 @@ export function ManagerDashboard() {
             </table>
             {dashboardData?.sales_reps.length === 0 && (
               <div className="px-6 py-12 text-center text-slate-500">No sales reps yet.</div>
+            )}
+          </div>
+
+          <div className="block md:hidden">
+            {dashboardData?.sales_reps.length === 0 ? (
+              <div className="px-4 py-8 text-center text-slate-500">No sales reps yet.</div>
+            ) : (
+              <div className="space-y-4 p-4">
+                {dashboardData?.sales_reps.map((rep) => (
+                  <div key={rep.rep.id} className="rounded-lg border border-slate-200 p-4 shadow-sm">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-base font-semibold text-slate-900">{rep.rep.name}</p>
+                        <p className="text-sm text-slate-500">{rep.rep.email}</p>
+                      </div>
+                      <span className="rounded-full bg-navy-50 px-2 py-1 text-xs font-semibold text-navy-700">
+                        {rep.statistics.average_score.toFixed(1)}/100
+                      </span>
+                    </div>
+                    <div className="mt-4 grid grid-cols-2 gap-3 text-sm text-slate-600">
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-slate-400">Total Leads</p>
+                        <p className="font-semibold text-slate-900">{rep.statistics.total_leads}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-slate-400">Hot Leads</p>
+                        <p className="font-semibold text-red-600">{rep.statistics.hot_leads}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-slate-400">Warm Leads</p>
+                        <p className="font-semibold text-yellow-600">{rep.statistics.warm_leads}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-slate-400">Cold Leads</p>
+                        <p className="font-semibold text-blue-600">{rep.statistics.cold_leads}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         </div>

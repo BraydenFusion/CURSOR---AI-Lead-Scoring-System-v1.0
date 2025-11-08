@@ -3,12 +3,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { ErrorBoundary } from "./components/ErrorBoundary";
-import { NavBar } from "./components/NavBar";
 import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
 import { ResetPasswordPage } from "./pages/ResetPasswordPage";
-import { LeadDashboard } from "./components/LeadDashboard";
 import { MyLeadsPage } from "./pages/MyLeadsPage";
 import { LeadDetailPage } from "./pages/LeadDetailPage";
 import { SalesRepDashboard } from "./pages/SalesRepDashboard";
@@ -21,6 +19,7 @@ import { TermsOfServicePage } from "./pages/TermsOfServicePage";
 import { PrivacyPolicyPage } from "./pages/PrivacyPolicyPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { OnboardingPage } from "./pages/OnboardingPage";
+import { LegacyDashboardPage } from "./pages/LegacyDashboardPage";
 
 // Role-based dashboard redirect component
 function DashboardRedirect() {
@@ -120,12 +119,7 @@ function App() {
               path="/dashboard/legacy"
               element={
                 <ProtectedRoute>
-                  <div className="min-h-screen bg-slate-50 text-slate-900">
-                    <NavBar />
-                    <main className="mx-auto max-w-6xl px-6 py-8">
-                      <LeadDashboard />
-                    </main>
-                  </div>
+                  <LegacyDashboardPage />
                 </ProtectedRoute>
               }
             />

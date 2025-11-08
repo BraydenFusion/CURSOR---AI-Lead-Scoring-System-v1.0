@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { apiClient } from "../services/api";
 import { WelcomeWalkthrough } from "../components/WelcomeWalkthrough";
@@ -41,6 +41,7 @@ interface DashboardData {
 
 export function SalesRepDashboard() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
@@ -212,7 +213,7 @@ export function SalesRepDashboard() {
       )}
 
       {/* Upload Modal */}
-        {showUpload && (
+      {showUpload && (
           <div className="mb-6 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
             <div className="mb-4 flex gap-4">
               <button
@@ -355,39 +356,105 @@ export function SalesRepDashboard() {
           <div className="mt-2 text-4xl font-bold text-navy-600">{stats?.average_score.toFixed(1) || 0}/100</div>
         </div>
 
-        {/* Leads Table */}
-        <div className="rounded-lg border border-slate-200 bg-white shadow-sm" data-walkthrough="leads-table">
-          <div className="border-b border-slate-200 px-6 py-4">
-            <h2 className="text-xl font-bold text-slate-900">My Leads</h2>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-slate-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">Email</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">Phone</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">Score</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">Classification</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">Source</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">Created</th>
+      {/* Leads Table */}
+      <div className="rounded-lg border border-slate-200 bg-white shadow-sm" data-walkthrough="leads-table">
+        <div className="border-b border-slate-200 px-6 py-4">
+          <h2 className="text-xl font-bold text-slate-900">My Leads</h2>
+        </div>
+
+        {/* Desktop Table */}
+        <div className="hidden overflow-x-auto md:block">
+          <table className="w-full">
+            <thead className="bg-slate-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">
+                  Name
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">
+                  Email
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">
+                  Phone
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">
+                  Score
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">
+                  Classification
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">
+                  Source
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-700">
+                  Created
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200 bg-white">
+              {leads.map((lead) => (
+                <tr key={lead.id} className="hover:bg-slate-50">
+                  <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-slate-900">{lead.name}</td>
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-600">{lead.email}</td>
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-600">{lead.phone || "-"}</td>
+                  <td className="whitespace-nowrap px-6 py-4 text-sm">
+                    <span
+                      className={`font-bold ${
+                        lead.score >= 80 ? "text-red-600" : lead.score >= 50 ? "text-yellow-600" : "text-navy-600"
+                      }`}
+                    >
+                      {lead.score}/100
+                    </span>
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-sm">
+                    <span
+                      className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
+                        lead.classification === "hot"
+                          ? "bg-red-100 text-red-800"
+                          : lead.classification === "warm"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : "bg-blue-100 text-blue-800"
+                      }`}
+                    >
+                      {lead.classification?.toUpperCase() || "N/A"}
+                    </span>
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-600 capitalize">{lead.status}</td>
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-600">{lead.source}</td>
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-500">
+                    {new Date(lead.created_at).toLocaleDateString()}
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200 bg-white">
-                {leads.map((lead) => (
-                  <tr key={lead.id} className="hover:bg-slate-50">
-                    <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-slate-900">{lead.name}</td>
-                    <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-600">{lead.email}</td>
-                    <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-600">{lead.phone || "-"}</td>
-                    <td className="whitespace-nowrap px-6 py-4 text-sm">
-                      <span className={`font-bold ${lead.score >= 80 ? "text-red-600" : lead.score >= 50 ? "text-yellow-600" : "text-navy-600"}`}>
-                        {lead.score}/100
-                      </span>
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-sm">
+              ))}
+            </tbody>
+          </table>
+          {leads.length === 0 && (
+            <div className="px-6 py-12 text-center text-slate-500">No leads yet. Upload some leads to get started!</div>
+          )}
+        </div>
+
+        {/* Mobile Cards */}
+        <div className="block md:hidden">
+          {leads.length === 0 ? (
+            <div className="px-4 py-8 text-center text-slate-500">No leads yet. Upload some leads to get started!</div>
+          ) : (
+            <div className="space-y-4 p-4">
+              {leads.map((lead) => (
+                <button
+                  key={lead.id}
+                  onClick={() => navigate(`/leads/${lead.id}`)}
+                  className="w-full text-left"
+                >
+                  <div className="rounded-lg border border-slate-200 p-4 shadow-sm transition hover:bg-slate-50">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-base font-semibold text-slate-900">{lead.name}</p>
+                        <p className="text-sm text-slate-500">{lead.email}</p>
+                      </div>
                       <span
-                        className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
+                        className={`rounded-full px-2 py-1 text-xs font-semibold ${
                           lead.classification === "hot"
                             ? "bg-red-100 text-red-800"
                             : lead.classification === "warm"
@@ -397,21 +464,38 @@ export function SalesRepDashboard() {
                       >
                         {lead.classification?.toUpperCase() || "N/A"}
                       </span>
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-600 capitalize">{lead.status}</td>
-                    <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-600">{lead.source}</td>
-                    <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-500">
-                      {new Date(lead.created_at).toLocaleDateString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {leads.length === 0 && (
-              <div className="px-6 py-12 text-center text-slate-500">No leads yet. Upload some leads to get started!</div>
-            )}
-          </div>
+                    </div>
+                    <div className="mt-4 grid grid-cols-2 gap-3 text-sm text-slate-600">
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-slate-400">Score</p>
+                        <span
+                          className={`text-lg font-bold ${
+                            lead.score >= 80 ? "text-red-600" : lead.score >= 50 ? "text-yellow-600" : "text-navy-600"
+                          }`}
+                        >
+                          {lead.score}/100
+                        </span>
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-slate-400">Status</p>
+                        <p className="font-medium capitalize">{lead.status}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-slate-400">Source</p>
+                        <p className="font-medium">{lead.source}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-slate-400">Created</p>
+                        <p className="font-medium">{new Date(lead.created_at).toLocaleDateString()}</p>
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
+      </div>
     </DashboardLayout>
   );
 }
