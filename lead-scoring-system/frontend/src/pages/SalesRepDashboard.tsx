@@ -51,12 +51,13 @@ export function SalesRepDashboard() {
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [uploadResult, setUploadResult] = useState<string | null>(null);
   const [showWalkthrough, setShowWalkthrough] = useState(false);
-  const [individualForm, setIndividualForm] = useState({
+    const [individualForm, setIndividualForm] = useState({
     name: "",
     email: "",
     phone: "",
     source: "manual_entry",
     location: "",
+      auto_assign: true,
   });
 
   useEffect(() => {
@@ -143,6 +144,7 @@ export function SalesRepDashboard() {
         phone: "",
         source: "manual_entry",
         location: "",
+          auto_assign: true,
       });
       setTimeout(() => {
         setShowUpload(false);
@@ -312,6 +314,22 @@ export function SalesRepDashboard() {
                   />
                 </div>
                 <div className="col-span-2">
+                    <label className="inline-flex items-center gap-2 text-sm font-medium text-slate-700">
+                      <input
+                        type="checkbox"
+                        checked={individualForm.auto_assign}
+                        onChange={(e) =>
+                          setIndividualForm({ ...individualForm, auto_assign: e.target.checked })
+                        }
+                        className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      Enable Auto-Assignment
+                    </label>
+                    <p className="mt-1 text-xs text-slate-500">
+                      Uncheck to keep this lead unassigned until you assign it manually.
+                    </p>
+                  </div>
+                  <div className="col-span-2">
                   <button
                     onClick={handleIndividualUpload}
                     disabled={uploading}

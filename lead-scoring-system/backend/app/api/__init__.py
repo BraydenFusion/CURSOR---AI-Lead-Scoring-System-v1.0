@@ -5,6 +5,7 @@ from fastapi import APIRouter
 from .routes import (
     activities_router,
     assignments_router,
+    assignment_rules_router,
     auth_router,
     analytics_router,
     reports_router,
@@ -34,6 +35,7 @@ router.include_router(scoring_router, prefix="/leads", tags=["scoring"])
 router.include_router(upload_router, prefix="/upload", tags=["upload"])
 router.include_router(dashboard_router, prefix="/dashboard", tags=["dashboard"])
 router.include_router(assignments_router, prefix="/assignments", tags=["assignments"])
+router.include_router(assignment_rules_router, prefix="/assignment-rules", tags=["assignment_rules"])
 router.include_router(notes_router, prefix="/notes", tags=["notes"])
 router.include_router(notifications_router, prefix="/notifications", tags=["notifications"])
 router.include_router(analytics_router, prefix="/analytics", tags=["analytics"])

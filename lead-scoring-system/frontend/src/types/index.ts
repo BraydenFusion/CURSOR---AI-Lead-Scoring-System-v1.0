@@ -33,3 +33,42 @@ export type ScoreDetails = {
   breakdown: ScoreBreakdown;
   details: Record<string, number>;
 };
+
+export type AssignmentRuleType = "round_robin" | "territory" | "workload" | "score_based";
+
+export type AssignmentRule = {
+  id: number;
+  name: string;
+  description?: string | null;
+  active: boolean;
+  priority: number;
+  rule_type: AssignmentRuleType;
+  conditions: Record<string, unknown>;
+  assignment_logic: Record<string, unknown>;
+  created_by_id?: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AssignmentRuleTestResult = {
+  matches: boolean;
+  rule_id?: number;
+  lead_id?: string;
+  assigned_user_id?: string | null;
+  assigned_user_name?: string | null;
+  reason?: string;
+};
+
+export type AssignmentRuleApplyResult = {
+  success: boolean;
+  assigned_user_id?: string | null;
+  assigned_user_name?: string | null;
+  message?: string | null;
+};
+
+export type EligibleRep = {
+  id: string;
+  full_name: string;
+  email: string;
+  active_assignments: number;
+};

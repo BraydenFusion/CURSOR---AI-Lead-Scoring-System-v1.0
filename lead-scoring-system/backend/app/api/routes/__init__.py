@@ -5,6 +5,7 @@ from .activities import router as activities_router
 from .scoring import router as scoring_router
 from .auth import router as auth_router
 from .assignments import router as assignments_router
+from .assignment_rules import router as assignment_rules_router
 from .notes import router as notes_router
 from .notifications import router as notifications_router
 from .upload import router as upload_router
@@ -25,6 +26,7 @@ __all__ = [
     "scoring_router",
     "auth_router",
     "assignments_router",
+    "assignment_rules_router",
     "notes_router",
     "notifications_router",
     "upload_router",

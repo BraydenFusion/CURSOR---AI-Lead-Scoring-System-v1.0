@@ -9,6 +9,7 @@ from .note import LeadNote
 from .notification import Notification, NotificationType
 from .ai_scoring import LeadScore, LeadEngagementEvent, LeadInsight
 from .report import SavedReport
+from .assignment_rule import AssignmentRule
 
 __all__ = [
     "Lead",
@@ -25,4 +26,5 @@ __all__ = [
     "LeadEngagementEvent",
     "LeadInsight",
     "SavedReport",
+    "AssignmentRule",
 ]
