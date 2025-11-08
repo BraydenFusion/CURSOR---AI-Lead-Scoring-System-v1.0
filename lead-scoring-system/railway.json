@@ -1,0 +1,26 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "deployments": [
+    {
+      "serviceName": "backend",
+      "path": "backend",
+      "builder": "NIXPACKS",
+      "buildCommand": "pip install --no-cache-dir -r requirements.txt",
+      "startCommand": "./start-railway.sh",
+      "restartPolicyType": "ON_FAILURE",
+      "restartPolicyMaxRetries": 10,
+      "healthcheckPath": "/health"
+    },
+    {
+      "serviceName": "frontend",
+      "path": "frontend",
+      "builder": "NIXPACKS",
+      "buildCommand": "npm install && npm run build",
+      "startCommand": "npm run preview -- --host 0.0.0.0 --port $PORT",
+      "restartPolicyType": "ON_FAILURE",
+      "restartPolicyMaxRetries": 10
+    }
+  ]
+}
+
+
