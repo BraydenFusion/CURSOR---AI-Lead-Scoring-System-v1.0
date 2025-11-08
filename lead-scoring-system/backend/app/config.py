@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     environment: str = Field(default="development")
     
     # OpenAI API Key for AI-powered lead scoring
-    openai_api_key: Optional[str] = Field(default=None, validation_alias="OPENAI_API_KEY")
+    openai_api_key: str = Field(default="", validation_alias="OPENAI_API_KEY")
     
     # Google OAuth for Google Sign-In
     google_client_id: Optional[str] = Field(default=None, validation_alias="GOOGLE_CLIENT_ID")

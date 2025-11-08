@@ -25,6 +25,15 @@ from .assignment_rule import (
     AssignmentRuleApplyResponse,
 )
 from .note import NoteCreate, NoteResponse, NotificationResponse
+from .ai import (
+    AIInsightResponse,
+    EmailTemplateRequest,
+    EmailTemplateResponse,
+    NextBestActionResponse,
+    ActionItem,
+    ConversionProbability,
+    TalkingPoint,
+)
 
 __all__ = [
     "LeadCreate",
@@ -61,4 +70,11 @@ __all__ = [
     "AssignmentEligibleRep",
     "AssignmentRuleApplyRequest",
     "AssignmentRuleApplyResponse",
+    "AIInsightResponse",
+    "EmailTemplateRequest",
+    "EmailTemplateResponse",
+    "NextBestActionResponse",
+    "ActionItem",
+    "ConversionProbability",
+    "TalkingPoint",
 ]

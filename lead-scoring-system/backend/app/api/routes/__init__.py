@@ -13,6 +13,7 @@ from .dashboard import router as dashboard_router
 from .profile import router as profile_router
 from .analytics import router as analytics_router
 from .reports import router as reports_router
+from .ai import router as ai_router
 
 # Import debug router if it exists
 try:
@@ -34,6 +35,7 @@ __all__ = [
     "profile_router",
     "analytics_router",
     "reports_router",
+    "ai_router",
 ]
 
 if debug_router:

@@ -72,3 +72,53 @@ export type EligibleRep = {
   email: string;
   active_assignments: number;
 };
+
+export type AIActionItem = {
+  title: string;
+  description: string;
+  priority: number;
+  time_estimate: string;
+  done?: boolean;
+};
+
+export type AIConversionProbability = {
+  level: "low" | "medium" | "high" | "unknown";
+  confidence?: number | null;
+  reasoning: string[];
+  comparison_to_similar?: string | null;
+};
+
+export type AITalkingPoint = {
+  title: string;
+  details: string;
+};
+
+export type AIInsight = {
+  lead_id: string;
+  summary: string;
+  summary_confidence?: number | null;
+  recommended_actions: AIActionItem[];
+  conversion_probability: AIConversionProbability;
+  talking_points: AITalkingPoint[];
+  generated_at: string;
+  estimated_cost?: number | null;
+};
+
+export type EmailTemplateRequestPayload = {
+  lead_id: string;
+  email_type: "initial_outreach" | "follow_up" | "demo_invite" | "pricing_discussion";
+};
+
+export type EmailTemplateResponsePayload = {
+  subject: string;
+  body: string;
+  call_to_action?: string | null;
+  generated_at: string;
+  estimated_cost?: number | null;
+};
+
+export type NextBestActionResponse = {
+  lead_id: string;
+  recommended_actions: AIActionItem[];
+  generated_at: string;
+};
