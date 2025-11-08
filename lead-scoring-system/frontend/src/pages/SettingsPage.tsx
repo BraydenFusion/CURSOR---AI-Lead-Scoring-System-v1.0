@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { apiClient } from "../services/api";
-import { NavBar } from "../components/NavBar";
+import { DashboardLayout } from "../components/layout/DashboardLayout";
 
 interface UserProfile {
   id: string;
@@ -172,52 +172,46 @@ export function SettingsPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-slate-50">
-        <NavBar />
-        <div className="mx-auto max-w-7xl px-6 py-8">
-          <div className="text-center">Please log in to access settings.</div>
+      <DashboardLayout title="Account Settings">
+        <div className="rounded-lg border border-slate-200 bg-white p-6 text-center text-slate-500 shadow-sm">
+          Please log in to access settings.
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <NavBar />
-      <main className="mx-auto max-w-7xl px-6 py-8">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-slate-900">Settings</h1>
-          <p className="mt-1 text-slate-600">Manage your account settings and preferences</p>
-        </div>
-
-        {/* Tabs */}
-        <div className="mb-6 border-b border-slate-200">
-          <nav className="-mb-px flex space-x-8">
-            {[
-              { id: "profile" as const, label: "Profile", icon: "👤" },
-              { id: "security" as const, label: "Security", icon: "🔒" },
-              { id: "documentation" as const, label: "Documentation", icon: "📚" },
-              { id: "notifications" as const, label: "Notifications", icon: "🔔" },
-              { id: "billing" as const, label: "Billing", icon: "💳" },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => {
-                  setActiveTab(tab.id);
-                  setMessage(null);
-                }}
-                className={`flex items-center space-x-2 border-b-2 px-1 py-4 text-sm font-medium ${
-                  activeTab === tab.id
-                    ? "border-navy-600 text-navy-600"
-                    : "border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700"
-                }`}
-              >
-                <span>{tab.icon}</span>
-                <span>{tab.label}</span>
-              </button>
-            ))}
-          </nav>
-        </div>
+    <DashboardLayout
+      title="Account Settings"
+      subtitle="Manage your profile, security, notifications, and billing preferences"
+    >
+      <div className="mb-6 border-b border-slate-200">
+        <nav className="-mb-px flex flex-wrap gap-4">
+          {[
+            { id: "profile" as const, label: "Profile", icon: "👤" },
+            { id: "security" as const, label: "Security", icon: "🔒" },
+            { id: "documentation" as const, label: "Documentation", icon: "📚" },
+            { id: "notifications" as const, label: "Notifications", icon: "🔔" },
+            { id: "billing" as const, label: "Billing", icon: "💳" },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => {
+                setActiveTab(tab.id);
+                setMessage(null);
+              }}
+              className={`flex items-center gap-2 border-b-2 px-1 py-3 text-sm font-medium transition ${
+                activeTab === tab.id
+                  ? "border-navy-600 text-navy-600"
+                  : "border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700"
+              }`}
+            >
+              <span>{tab.icon}</span>
+              <span>{tab.label}</span>
+            </button>
+          ))}
+        </nav>
+      </div>
 
         {/* Message */}
         {message && (
@@ -519,8 +513,7 @@ export function SettingsPage() {
             </div>
           </div>
         )}
-      </main>
-    </div>
+    </DashboardLayout>
   );
 }
 

@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { NavBar } from "../components/NavBar";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Textarea } from "../components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import apiClient from "../services/api";
+import { DashboardLayout } from "../components/layout/DashboardLayout";
 
 interface Note {
   id: string;
@@ -85,35 +85,38 @@ export function LeadDetailPage() {
     }
   };
 
+  const headerActions = (
+    <Button variant="outline" onClick={() => navigate(-1)}>
+      Back to Leads
+    </Button>
+  );
+
   if (!lead) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <NavBar />
-        <div className="container mx-auto p-6">
-          <div className="animate-pulse space-y-6">
-            <div className="rounded-lg border bg-white p-6">
-              <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
-              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="rounded-lg border bg-white p-6">
-                <div className="h-6 bg-gray-200 rounded w-1/4 mb-4"></div>
-                <div className="space-y-3">
-                  <div className="h-4 bg-gray-200 rounded"></div>
-                  <div className="h-4 bg-gray-200 rounded"></div>
-                </div>
+      <DashboardLayout title="Lead Detail" actions={headerActions}>
+        <div className="animate-pulse space-y-6">
+          <div className="rounded-lg border bg-white p-6 shadow-sm">
+            <div className="mb-4 h-8 w-1/3 rounded bg-slate-200" />
+            <div className="h-4 w-1/2 rounded bg-slate-100" />
+          </div>
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <div className="rounded-lg border bg-white p-6 shadow-sm">
+              <div className="mb-4 h-6 w-1/4 rounded bg-slate-200" />
+              <div className="space-y-3">
+                <div className="h-4 rounded bg-slate-100" />
+                <div className="h-4 rounded bg-slate-100" />
               </div>
-              <div className="rounded-lg border bg-white p-6">
-                <div className="h-6 bg-gray-200 rounded w-1/4 mb-4"></div>
-                <div className="space-y-3">
-                  <div className="h-4 bg-gray-200 rounded"></div>
-                  <div className="h-4 bg-gray-200 rounded"></div>
-                </div>
+            </div>
+            <div className="rounded-lg border bg-white p-6 shadow-sm">
+              <div className="mb-4 h-6 w-1/4 rounded bg-slate-200" />
+              <div className="space-y-3">
+                <div className="h-4 rounded bg-slate-100" />
+                <div className="h-4 rounded bg-slate-100" />
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
 
@@ -130,11 +133,12 @@ export function LeadDetailPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <NavBar />
-
-      <div className="container mx-auto p-6">
-        {/* Lead Header */}
+    <DashboardLayout
+      title={lead.name}
+      subtitle={lead.email}
+      actions={headerActions}
+    >
+      {/* Lead Header */}
         <Card className="mb-6">
           <CardHeader>
             <div className="flex justify-between items-start">
@@ -178,7 +182,7 @@ export function LeadDetailPage() {
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* Notes Section */}
           <Card>
             <CardHeader>
@@ -251,8 +255,7 @@ export function LeadDetailPage() {
             </CardContent>
           </Card>
         </div>
-      </div>
-    </div>
+    </DashboardLayout>
   );
 }
 
