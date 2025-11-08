@@ -8,6 +8,7 @@ import {
   Settings,
   BarChart3,
   TrendingUp,
+  FileText,
   Home,
 } from "lucide-react";
 import clsx from "clsx";
@@ -59,6 +60,12 @@ export function Sidebar({ onNavigate, className }: SidebarProps) {
         label: "Analytics",
         icon: TrendingUp,
         to: "/dashboard/analytics",
+        roles: ["manager", "admin"] as Array<"admin" | "manager" | "sales_rep">,
+      },
+      {
+        label: "Reports",
+        icon: FileText,
+        to: "/dashboard/reports",
         roles: ["manager", "admin"] as Array<"admin" | "manager" | "sales_rep">,
       },
       {

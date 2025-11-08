@@ -8,6 +8,7 @@ import {
   Settings,
   BarChart3,
   TrendingUp,
+  FileText,
   Home,
   LogOut,
 } from "lucide-react";
@@ -57,6 +58,12 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
       label: "Analytics",
       icon: TrendingUp,
       to: "/dashboard/analytics",
+      roles: ["manager", "admin"] as Array<"admin" | "manager" | "sales_rep">,
+    },
+    {
+      label: "Reports",
+      icon: FileText,
+      to: "/dashboard/reports",
       roles: ["manager", "admin"] as Array<"admin" | "manager" | "sales_rep">,
     },
     {

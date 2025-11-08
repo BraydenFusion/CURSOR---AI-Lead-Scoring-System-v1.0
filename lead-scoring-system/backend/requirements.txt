@@ -23,3 +23,4 @@ twilio==8.10.0
 python-socketio==5.10.0
 sendgrid==6.10.0
 phonenumbers==8.13.25
+reportlab>=3.6.13

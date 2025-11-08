@@ -8,6 +8,7 @@ export type AnalyticsFilters = {
   endDate?: string | null;
   source?: string;
   repId?: string;
+  status?: string;
 };
 
 function buildQueryString(filters: AnalyticsFilters): string {
@@ -31,6 +32,10 @@ function buildQueryString(filters: AnalyticsFilters): string {
 
   if (filters.repId && filters.repId !== "all") {
     params.set("rep_id", filters.repId);
+  }
+
+  if (filters.status && filters.status !== "all") {
+    params.set("status", filters.status);
   }
 
   return params.toString();

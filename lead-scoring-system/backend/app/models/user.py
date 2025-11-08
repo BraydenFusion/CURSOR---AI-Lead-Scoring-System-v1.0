@@ -56,6 +56,11 @@ class User(Base):
         back_populates="user",
         foreign_keys="[LeadAssignment.user_id]"
     )
+    saved_reports = relationship(
+        "SavedReport",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )
     
     def get_role_enum(self) -> UserRole:
         """Get role as UserRole enum."""

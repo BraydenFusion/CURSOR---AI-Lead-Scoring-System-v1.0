@@ -21,6 +21,7 @@ import { SettingsPage } from "./pages/SettingsPage";
 import { OnboardingPage } from "./pages/OnboardingPage";
 import { LegacyDashboardPage } from "./pages/LegacyDashboardPage";
 import { AnalyticsDashboard } from "./pages/AnalyticsDashboard";
+import { ReportBuilder } from "./pages/ReportBuilder";
 
 // Role-based dashboard redirect component
 function DashboardRedirect() {
@@ -81,6 +82,14 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={["admin", "manager"]}>
                   <AnalyticsDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/reports"
+              element={
+                <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                  <ReportBuilder />
                 </ProtectedRoute>
               }
             />

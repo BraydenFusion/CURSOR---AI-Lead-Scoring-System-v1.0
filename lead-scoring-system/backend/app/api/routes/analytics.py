@@ -78,12 +78,30 @@ def _normalize_rep(rep_id: Optional[str]) -> Optional[UUID]:
         ) from exc
 
 
+def _normalize_statuses(status: Optional[str]) -> Optional[List[str]]:
+    if not status:
+        return None
+    if isinstance(status, list):  # type: ignore[unreachable]
+        items = status
+    else:
+        items = [part.strip() for part in status.split(",") if part.strip()]
+
+    normalized: List[str] = []
+    for item in items:
+        try:
+            normalized.append(LeadStatus(item.lower()).value)
+        except ValueError:
+            continue
+    return normalized or None
+
+
 def _filtered_lead_ids_subquery(
     db: Session,
     start_dt: datetime,
     end_dt: datetime,
     source: Optional[str],
     rep_uuid: Optional[UUID],
+    statuses: Optional[List[str]] = None,
 ):
     query = db.query(Lead.id)
 
@@ -93,6 +111,9 @@ def _filtered_lead_ids_subquery(
 
     if source:
         query = query.filter(func.lower(Lead.source) == source.lower())
+
+    if statuses:
+        query = query.filter(Lead.status.in_(statuses))
 
     query = query.filter(Lead.created_at >= start_dt, Lead.created_at <= end_dt)
     return query.distinct().subquery()
@@ -130,6 +151,7 @@ def get_overview(
     end_date: Optional[str] = None,
     source: Optional[str] = Query(default=None),
     rep_id: Optional[str] = Query(default=None),
+    status: Optional[str] = Query(default=None),
     db: Session = Depends(get_db),
     _: User = Depends(require_role(ALLOWED_ROLES)),
 ):
@@ -137,8 +159,11 @@ def get_overview(
     start_dt, end_dt, normalized_period = _normalize_period(period, start_date, end_date)
     normalized_source = _normalize_source(source)
     rep_uuid = _normalize_rep(rep_id)
+    statuses = _normalize_statuses(status)
 
-    lead_ids_subquery = _filtered_lead_ids_subquery(db, start_dt, end_dt, normalized_source, rep_uuid)
+    lead_ids_subquery = _filtered_lead_ids_subquery(
+        db, start_dt, end_dt, normalized_source, rep_uuid, statuses
+    )
     total_leads = _count_filtered_leads(db, lead_ids_subquery)
 
     hot_leads = (
@@ -249,14 +274,18 @@ def get_conversion_funnel(
     end_date: Optional[str] = None,
     source: Optional[str] = Query(default=None),
     rep_id: Optional[str] = Query(default=None),
+    status: Optional[str] = Query(default=None),
     db: Session = Depends(get_db),
     _: User = Depends(require_role(ALLOWED_ROLES)),
 ):
     start_dt, end_dt, _ = _normalize_period(period, start_date, end_date)
     normalized_source = _normalize_source(source)
     rep_uuid = _normalize_rep(rep_id)
+    statuses = _normalize_statuses(status)
 
-    lead_ids_subquery = _filtered_lead_ids_subquery(db, start_dt, end_dt, normalized_source, rep_uuid)
+    lead_ids_subquery = _filtered_lead_ids_subquery(
+        db, start_dt, end_dt, normalized_source, rep_uuid, statuses
+    )
     total_leads = _count_filtered_leads(db, lead_ids_subquery)
 
     stages = [
@@ -288,11 +317,13 @@ def get_lead_sources(
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     rep_id: Optional[str] = Query(default=None),
+    status: Optional[str] = Query(default=None),
     db: Session = Depends(get_db),
     _: User = Depends(require_role(ALLOWED_ROLES)),
 ):
     start_dt, end_dt, _ = _normalize_period(period, start_date, end_date)
     rep_uuid = _normalize_rep(rep_id)
+    statuses = _normalize_statuses(status)
 
     query = (
         db.query(
@@ -309,6 +340,9 @@ def get_lead_sources(
         query = query.join(LeadAssignment, LeadAssignment.lead_id == Lead.id).filter(
             LeadAssignment.user_id == rep_uuid
         )
+
+    if statuses:
+        query = query.filter(Lead.status.in_(statuses))
 
     query = query.group_by(func.lower(Lead.source))
 
@@ -336,12 +370,14 @@ def get_rep_performance(
     end_date: Optional[str] = None,
     source: Optional[str] = Query(default=None),
     rep_id: Optional[str] = Query(default=None),
+    status: Optional[str] = Query(default=None),
     db: Session = Depends(get_db),
     _: User = Depends(require_role(ALLOWED_ROLES)),
 ):
     start_dt, end_dt, _ = _normalize_period(period, start_date, end_date)
     normalized_source = _normalize_source(source)
     rep_uuid = _normalize_rep(rep_id)
+    statuses = _normalize_statuses(status)
 
     reps = _get_sales_reps(db, rep_uuid)
     performance = []
@@ -356,6 +392,9 @@ def get_rep_performance(
 
         if normalized_source:
             assignment_query = assignment_query.filter(func.lower(Lead.source) == normalized_source.lower())
+
+        if statuses:
+            assignment_query = assignment_query.filter(Lead.status.in_(statuses))
 
         assignments = assignment_query.all()
 
@@ -405,14 +444,18 @@ def get_score_distribution(
     end_date: Optional[str] = None,
     source: Optional[str] = Query(default=None),
     rep_id: Optional[str] = Query(default=None),
+    status: Optional[str] = Query(default=None),
     db: Session = Depends(get_db),
     _: User = Depends(require_role(ALLOWED_ROLES)),
 ):
     start_dt, end_dt, _ = _normalize_period(period, start_date, end_date)
     normalized_source = _normalize_source(source)
     rep_uuid = _normalize_rep(rep_id)
+    statuses = _normalize_statuses(status)
 
-    lead_ids_subquery = _filtered_lead_ids_subquery(db, start_dt, end_dt, normalized_source, rep_uuid)
+    lead_ids_subquery = _filtered_lead_ids_subquery(
+        db, start_dt, end_dt, normalized_source, rep_uuid, statuses
+    )
 
     buckets = [
         ("0-20", 0, 20),
@@ -444,14 +487,18 @@ def get_timeline(
     end_date: Optional[str] = None,
     source: Optional[str] = Query(default=None),
     rep_id: Optional[str] = Query(default=None),
+    status: Optional[str] = Query(default=None),
     db: Session = Depends(get_db),
     _: User = Depends(require_role(ALLOWED_ROLES)),
 ):
     start_dt, end_dt, normalized_period = _normalize_period(period, start_date, end_date)
     normalized_source = _normalize_source(source)
     rep_uuid = _normalize_rep(rep_id)
+    statuses = _normalize_statuses(status)
 
-    lead_ids_subquery = _filtered_lead_ids_subquery(db, start_dt, end_dt, normalized_source, rep_uuid)
+    lead_ids_subquery = _filtered_lead_ids_subquery(
+        db, start_dt, end_dt, normalized_source, rep_uuid, statuses
+    )
     leads = _query_filtered_leads(db, lead_ids_subquery)
 
     contacted_leads = [
