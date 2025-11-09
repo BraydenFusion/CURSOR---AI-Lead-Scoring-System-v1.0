@@ -2,7 +2,7 @@
 # Requires a valid .env file and local network access.
 
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 
 import requests
 
@@ -48,17 +48,27 @@ def main() -> None:
 
         payload = {
             "event": "deploy_triggered",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
         headers = {"Authorization": f"Bearer {api_key}"}
 
-        response = requests.post(api_endpoint, json=payload, headers=headers, timeout=15)
-        response.raise_for_status()
+        try:
+            response = requests.post(api_endpoint, json=payload, headers=headers, timeout=15)
+            response.raise_for_status()
+        except requests.HTTPError as http_err:
+            write_log(
+                f"Python post-push FAILURE - HTTP {http_err.response.status_code} for {api_endpoint}",
+                success=False,
+            )
+            return
+        except requests.RequestException as req_err:
+            write_log(f"Python post-push FAILURE - {req_err}", success=False)
+            return
 
         write_log(f"Python post-push SUCCESS ({response.status_code})")
     except Exception as exc:
         write_log(f"Python post-push FAILURE - {exc}", success=False)
-        raise
+        return
 
 
 if __name__ == "__main__":
