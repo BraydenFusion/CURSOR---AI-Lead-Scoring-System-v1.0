@@ -96,10 +96,10 @@ export function SyncLogsTable({ logs, onExport, onSelectConflicts }: SyncLogsTab
                   <td className="px-3 py-2 text-slate-600">
                     {log.errors && log.errors.length > 0 ? (
                       <Button
-                        variant="link"
+                        variant="ghost"
                         size="sm"
                         onClick={() => onSelectConflicts?.(log)}
-                        className="px-0 text-amber-600"
+                        className="px-0 text-amber-600 hover:bg-transparent"
                       >
                         View ({log.errors.length})
                       </Button>

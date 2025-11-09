@@ -161,7 +161,12 @@ export function LeadEmailPanel({ leadId, leadEmail, leadName }: LeadEmailPanelPr
               <Reply className="mr-2 h-4 w-4" />
               Reply
             </Button>
-            <Button variant="link" size="sm" onClick={() => toggleExpanded(email.id)}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => toggleExpanded(email.id)}
+              className="px-0 text-blue-600 hover:bg-transparent"
+            >
               {isExpanded ? (
                 <>
                   Show less <ChevronUp className="ml-1 h-4 w-4" />

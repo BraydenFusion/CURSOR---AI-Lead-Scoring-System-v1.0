@@ -315,9 +315,10 @@ const IntegrationsPage = () => {
         <div className="flex flex-wrap items-center justify-between gap-3">
           {isConnected ? (
             <Button
-              variant="secondary"
+              variant="outline"
               onClick={() => disconnectEmailMutation.mutate(provider)}
               disabled={disconnectEmailMutation.isPending}
+              className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
             >
               Disconnect {providerLabels[provider]}
             </Button>
@@ -482,9 +483,9 @@ const IntegrationsPage = () => {
             </div>
             {lastLog.errors && lastLog.errors.length > 0 ? (
               <Button
-                variant="link"
+                variant="ghost"
                 size="sm"
-                className="px-0 text-amber-600"
+                className="px-0 text-amber-600 hover:bg-transparent"
                 onClick={() => setSelectedLog(lastLog)}
               >
                 View conflicts ({lastLog.errors.length})

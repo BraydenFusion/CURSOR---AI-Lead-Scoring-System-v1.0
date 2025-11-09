@@ -64,7 +64,7 @@ export function AIInsightsPanel({ leadId, leadName }: Props) {
   const [expandedPoints, setExpandedPoints] = useState<Record<number, boolean>>({});
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const insightsQuery = useQuery({
+  const insightsQuery = useQuery<AIInsight, unknown>({
     queryKey: ["ai-insights", leadId],
     queryFn: async () => {
       setErrorMessage(null);

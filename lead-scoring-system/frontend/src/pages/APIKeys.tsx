@@ -216,7 +216,7 @@ export function APIKeysPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      disabled={!key.active || revokeMutation.isLoading}
+                      disabled={!key.active || revokeMutation.isPending}
                       onClick={() => revokeMutation.mutate(key.id)}
                     >
                       Revoke
@@ -225,7 +225,7 @@ export function APIKeysPage() {
                       variant="ghost"
                       size="sm"
                       className="text-red-600 hover:bg-red-50 hover:text-red-700"
-                      disabled={deleteMutation.isLoading}
+                      disabled={deleteMutation.isPending}
                       onClick={() => deleteMutation.mutate(key.id)}
                     >
                       <Trash2 className="mr-1 h-4 w-4" />
@@ -291,8 +291,8 @@ export function APIKeysPage() {
                 <Button variant="ghost" type="button" onClick={() => setIsModalOpen(false)}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={createMutation.isLoading}>
-                  {createMutation.isLoading ? "Creating…" : "Generate Key"}
+                <Button type="submit" disabled={createMutation.isPending}>
+                  {createMutation.isPending ? "Creating…" : "Generate Key"}
                 </Button>
               </div>
             </form>

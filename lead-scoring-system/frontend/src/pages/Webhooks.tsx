@@ -283,7 +283,7 @@ export function WebhooksPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            disabled={testMutation.isLoading}
+                            disabled={testMutation.isPending}
                             onClick={() => testMutation.mutate({ webhookId: webhook.id })}
                           >
                             Test
@@ -292,7 +292,7 @@ export function WebhooksPage() {
                             variant="ghost"
                             size="sm"
                             className="text-red-600 hover:bg-red-50 hover:text-red-700"
-                            disabled={deleteMutation.isLoading}
+                            disabled={deleteMutation.isPending}
                             onClick={() => deleteMutation.mutate(webhook.id)}
                           >
                             <Trash className="mr-1 h-4 w-4" />
@@ -464,8 +464,8 @@ export function WebhooksPage() {
                 <Button variant="ghost" type="button" onClick={() => setIsModalOpen(false)}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={saveMutation.isLoading}>
-                  {saveMutation.isLoading ? "Saving…" : editingWebhook ? "Save Changes" : "Create Webhook"}
+                <Button type="submit" disabled={saveMutation.isPending}>
+                  {saveMutation.isPending ? "Saving…" : editingWebhook ? "Save Changes" : "Create Webhook"}
                 </Button>
               </div>
             </form>

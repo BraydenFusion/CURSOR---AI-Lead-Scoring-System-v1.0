@@ -372,47 +372,63 @@ export function AssignmentRules() {
   };
 
   const updateRoundRobinLogic = (changes: Partial<RoundRobinLogicFormState>) => {
-    if (formState.assignment_logic.type !== "round_robin") return;
-    setFormState((prev) => ({
-      ...prev,
-      assignment_logic: {
-        ...prev.assignment_logic,
-        ...changes,
-      },
-    }));
+    setFormState((prev) => {
+      if (prev.assignment_logic.type !== "round_robin") {
+        return prev;
+      }
+      return {
+        ...prev,
+        assignment_logic: {
+          ...prev.assignment_logic,
+          ...changes,
+        },
+      };
+    });
   };
 
   const updateTerritoryLogic = (changes: Partial<TerritoryLogicFormState>) => {
-    if (formState.assignment_logic.type !== "territory") return;
-    setFormState((prev) => ({
-      ...prev,
-      assignment_logic: {
-        ...prev.assignment_logic,
-        ...changes,
-      },
-    }));
+    setFormState((prev) => {
+      if (prev.assignment_logic.type !== "territory") {
+        return prev;
+      }
+      return {
+        ...prev,
+        assignment_logic: {
+          ...prev.assignment_logic,
+          ...changes,
+        },
+      };
+    });
   };
 
   const updateWorkloadLogic = (changes: Partial<WorkloadLogicFormState>) => {
-    if (formState.assignment_logic.type !== "workload") return;
-    setFormState((prev) => ({
-      ...prev,
-      assignment_logic: {
-        ...prev.assignment_logic,
-        ...changes,
-      },
-    }));
+    setFormState((prev) => {
+      if (prev.assignment_logic.type !== "workload") {
+        return prev;
+      }
+      return {
+        ...prev,
+        assignment_logic: {
+          ...prev.assignment_logic,
+          ...changes,
+        },
+      };
+    });
   };
 
   const updateScoreLogic = (changes: Partial<ScoreBasedLogicFormState>) => {
-    if (formState.assignment_logic.type !== "score_based") return;
-    setFormState((prev) => ({
-      ...prev,
-      assignment_logic: {
-        ...prev.assignment_logic,
-        ...changes,
-      },
-    }));
+    setFormState((prev) => {
+      if (prev.assignment_logic.type !== "score_based") {
+        return prev;
+      }
+      return {
+        ...prev,
+        assignment_logic: {
+          ...prev.assignment_logic,
+          ...changes,
+        },
+      };
+    });
   };
 
   const addTerritoryRow = () => {
@@ -1545,11 +1561,20 @@ export function AssignmentRules() {
                     Cancel Edit
                   </Button>
                 )}
-                <Button type="button" variant="outline" onClick={handleSaveAndTest} disabled={createMutation.isLoading || updateMutation.isLoading}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleSaveAndTest}
+                  disabled={createMutation.isPending || updateMutation.isPending}
+                >
                   Save & Test
                 </Button>
-                <Button type="submit" disabled={createMutation.isLoading || updateMutation.isLoading}>
-                  {formState.id ? "Update Rule" : "Create Rule"}
+                <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
+                  {createMutation.isPending || updateMutation.isPending
+                    ? "Saving..."
+                    : formState.id
+                      ? "Update Rule"
+                      : "Create Rule"}
                 </Button>
               </div>
             </form>

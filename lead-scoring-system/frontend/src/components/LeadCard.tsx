@@ -45,11 +45,16 @@ export function LeadCard({ lead }: LeadCardProps) {
                 {crmStatus.map((item) => {
                   const Icon = item.status === "success" ? Cloud : CloudOff;
                   return (
-                    <Icon
+                    <span
                       key={item.provider}
-                      className={`h-4 w-4 ${item.status === "success" ? "text-emerald-500" : "text-slate-400"}`}
-                      title={item.title}
-                    />
+                      className="inline-flex"
+                      aria-label={item.title}
+                    >
+                      <Icon
+                        className={`h-4 w-4 ${item.status === "success" ? "text-emerald-500" : "text-slate-400"}`}
+                        aria-hidden="true"
+                      />
+                    </span>
                   );
                 })}
               </div>
