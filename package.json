@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "deploy": "node deploy.js && python post_push.py"
+    "deploy": "node deploy.js && python3 post_push.py"
   },
   "dependencies": {
     "dotenv": "^17.2.3",

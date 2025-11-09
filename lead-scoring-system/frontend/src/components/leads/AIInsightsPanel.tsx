@@ -64,23 +64,23 @@ export function AIInsightsPanel({ leadId, leadName }: Props) {
   const [expandedPoints, setExpandedPoints] = useState<Record<number, boolean>>({});
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const insightsQuery = useQuery<AIInsight, unknown>({
-    queryKey: ["ai-insights", leadId],
-    queryFn: async () => {
+  const insightsQuery = useQuery<AIInsight, unknown, AIInsight, readonly ["ai-insights", string]>({
+    queryKey: ["ai-insights", leadId] as const,
+    queryFn: async (): Promise<AIInsight> => {
       setErrorMessage(null);
       return fetchAIInsights(leadId);
     },
     staleTime: 1000 * 60 * 10,
-    retry: (failureCount, error: any) => {
-      const status = error?.response?.status;
+    retry: (failureCount, error) => {
+      const status = (error as any)?.response?.status;
       // For configuration or rate limit failures, surface immediately
       if (status === 503 || status === 429) {
         return false;
       }
       return failureCount < 2;
     },
-    onError: (error: any) => {
-      const status = error?.response?.status;
+    onError: (error) => {
+      const status = (error as any)?.response?.status;
       if (status === 503) {
         setErrorMessage("AI insights are unavailable because the OpenAI API key is not configured.");
       } else if (status === 429) {

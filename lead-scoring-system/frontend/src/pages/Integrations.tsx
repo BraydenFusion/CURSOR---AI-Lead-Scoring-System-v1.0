@@ -346,7 +346,11 @@ const IntegrationsPage = () => {
     const connected = Boolean(pipedriveIntegration);
     const lastSync = pipedriveStatus?.integration?.last_sync ?? pipedriveIntegration?.last_sync ?? null;
     const lastLog = pipedriveStatus?.latest_log ?? null;
-    const credentialFields = [
+    const credentialFields: Array<{
+      key: keyof typeof pipedriveCredentials;
+      label: string;
+      type: "password" | "text";
+    }> = [
       { key: "api_token", label: "API Token", type: "password" },
       { key: "base_url", label: "Base URL (optional)", type: "text" },
     ];
