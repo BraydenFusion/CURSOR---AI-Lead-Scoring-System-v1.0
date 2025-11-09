@@ -79,19 +79,24 @@ export function AIInsightsPanel({ leadId, leadName }: Props) {
       }
       return failureCount < 2;
     },
-    onError: (error) => {
-      const status = (error as any)?.response?.status;
-      if (status === 503) {
-        setErrorMessage("AI insights are unavailable because the OpenAI API key is not configured.");
-      } else if (status === 429) {
-        setErrorMessage("Rate limit reached. Please try again in a little while.");
-      } else if (status === 404) {
-        setErrorMessage("Lead not found.");
-      } else {
-        setErrorMessage("Unable to load AI insights. Please try again later.");
-      }
-    },
   });
+
+  useEffect(() => {
+    if (!insightsQuery.error) {
+      return;
+    }
+
+    const status = (insightsQuery.error as any)?.response?.status;
+    if (status === 503) {
+      setErrorMessage("AI insights are unavailable because the OpenAI API key is not configured.");
+    } else if (status === 429) {
+      setErrorMessage("Rate limit reached. Please try again in a little while.");
+    } else if (status === 404) {
+      setErrorMessage("Lead not found.");
+    } else {
+      setErrorMessage("Unable to load AI insights. Please try again later.");
+    }
+  }, [insightsQuery.error]);
 
   const nextActionsMutation = useMutation({
     mutationFn: fetchNextBestActions,

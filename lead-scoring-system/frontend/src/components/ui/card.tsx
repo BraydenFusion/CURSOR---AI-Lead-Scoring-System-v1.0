@@ -30,3 +30,11 @@ export function CardContent({ className, ...props }: CardContentProps) {
   return <div className={clsx("p-6 pt-0", className)} {...props} />;
 }
 
+interface CardDescriptionProps extends HTMLAttributes<HTMLParagraphElement> {}
+
+export function CardDescription({ className, ...props }: CardDescriptionProps) {
+  return (
+    <p className={clsx("text-sm text-gray-500", className)} {...props} />
+  );
+}
+

@@ -170,13 +170,30 @@ class Settings(BaseSettings):
     )
 
     # Email/SMTP Configuration (Optional)
-    smtp_host: str = Field(default="smtp.gmail.com", description="SMTP server hostname.")
-    smtp_port: int = Field(default=587, description="SMTP server port.")
-    smtp_user: str = Field(default="", description="SMTP username/email.")
-    smtp_password: str = Field(default="", description="SMTP password or app password.")
+    smtp_host: str = Field(
+        default="smtp.gmail.com",
+        description="SMTP server hostname.",
+        validation_alias="SMTP_HOST",
+    )
+    smtp_port: int = Field(
+        default=587,
+        description="SMTP server port.",
+        validation_alias="SMTP_PORT",
+    )
+    smtp_user: str = Field(
+        default="",
+        description="SMTP username/email.",
+        validation_alias="SMTP_USERNAME",
+    )
+    smtp_password: str = Field(
+        default="",
+        description="SMTP password or app password.",
+        validation_alias="SMTP_PASSWORD",
+    )
     from_email: str = Field(
         default="noreply@leadscoring.com",
         description="Default sender email address.",
+        validation_alias="SMTP_FROM_EMAIL",
     )
 
     # Railway-specific
