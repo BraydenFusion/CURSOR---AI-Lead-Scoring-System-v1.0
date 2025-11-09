@@ -13,7 +13,43 @@ from .score import (
 )
 from .user import UserCreate, UserLogin, UserResponse, Token, TokenData
 from .assignment import AssignmentCreate, AssignmentResponse, AssignmentWithDetails
+from .assignment_rule import (
+    AssignmentRuleCreate,
+    AssignmentRuleRead,
+    AssignmentRuleUpdate,
+    AssignmentRuleConditions,
+    AssignmentRuleToggleRequest,
+    AssignmentRuleTestResponse,
+    AssignmentEligibleRep,
+    AssignmentRuleApplyRequest,
+    AssignmentRuleApplyResponse,
+)
 from .note import NoteCreate, NoteResponse, NotificationResponse
+from .ai import (
+    AIInsightResponse,
+    EmailTemplateRequest,
+    EmailTemplateResponse,
+    NextBestActionResponse,
+    ActionItem,
+    ConversionProbability,
+    TalkingPoint,
+)
+from .integrations import (
+    EmailAccountRead,
+    EmailMessageRead,
+    SendEmailRequest,
+    OAuthConnectResponse,
+    OAuthCallbackResponse,
+)
+from .crm import (
+    CRMIntegrationRead,
+    SalesforceConnectRequest,
+    HubSpotConnectRequest,
+    CRMSyncTriggerRequest,
+    SyncLogRead,
+    SyncStatusResponse,
+    ConflictResolutionRequest,
+)
 
 __all__ = [
     "LeadCreate",
@@ -41,4 +77,32 @@ __all__ = [
     "NoteCreate",
     "NoteResponse",
     "NotificationResponse",
+    "AssignmentRuleCreate",
+    "AssignmentRuleRead",
+    "AssignmentRuleUpdate",
+    "AssignmentRuleConditions",
+    "AssignmentRuleToggleRequest",
+    "AssignmentRuleTestResponse",
+    "AssignmentEligibleRep",
+    "AssignmentRuleApplyRequest",
+    "AssignmentRuleApplyResponse",
+    "AIInsightResponse",
+    "EmailTemplateRequest",
+    "EmailTemplateResponse",
+    "NextBestActionResponse",
+    "ActionItem",
+    "ConversionProbability",
+    "TalkingPoint",
+    "EmailAccountRead",
+    "EmailMessageRead",
+    "SendEmailRequest",
+    "OAuthConnectResponse",
+    "OAuthCallbackResponse",
+    "CRMIntegrationRead",
+    "SalesforceConnectRequest",
+    "HubSpotConnectRequest",
+    "CRMSyncTriggerRequest",
+    "SyncLogRead",
+    "SyncStatusResponse",
+    "ConflictResolutionRequest",
 ]

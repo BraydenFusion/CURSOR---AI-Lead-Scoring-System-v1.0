@@ -11,6 +11,8 @@ import {
   FileText,
   Home,
   LogOut,
+  Workflow,
+  Mail,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
@@ -58,6 +60,18 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
       label: "Analytics",
       icon: TrendingUp,
       to: "/dashboard/analytics",
+      roles: ["manager", "admin"] as Array<"admin" | "manager" | "sales_rep">,
+    },
+    {
+      label: "Integrations",
+      icon: Mail,
+      to: "/integrations",
+      roles: ["manager", "admin"] as Array<"admin" | "manager" | "sales_rep">,
+    },
+    {
+      label: "Assignment Rules",
+      icon: Workflow,
+      to: "/assignment-rules",
       roles: ["manager", "admin"] as Array<"admin" | "manager" | "sales_rep">,
     },
     {

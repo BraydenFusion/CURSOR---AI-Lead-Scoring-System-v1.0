@@ -79,6 +79,9 @@ class Lead(Base):
     insights: Mapped[List["LeadInsight"]] = relationship(
         "LeadInsight", back_populates="lead", cascade="all, delete-orphan"
     )
+    email_messages: Mapped[List["EmailMessage"]] = relationship(
+        "EmailMessage", back_populates="lead", cascade="all, delete-orphan"
+    )
 
     __table_args__ = (
         CheckConstraint("current_score >= 0 AND current_score <= 100", name="chk_leads_score_range"),
@@ -99,3 +102,4 @@ from .score_history import LeadScoreHistory  # noqa: E402
 from .assignment import LeadAssignment  # noqa: E402
 from .note import LeadNote  # noqa: E402
 from .ai_scoring import LeadScore, LeadEngagementEvent, LeadInsight  # noqa: E402
+from .email_integration import EmailMessage  # noqa: E402

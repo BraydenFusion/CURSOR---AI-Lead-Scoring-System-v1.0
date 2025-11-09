@@ -13,6 +13,7 @@ from ...models.lead import Lead, LeadStatus
 from ...models.user import User
 from ...schemas.lead import LeadCreate, LeadRead
 from ...services.ai_scoring import calculate_overall_score
+from ...services import auto_assign_lead
 from ...utils.auth import get_current_active_user
 from ...utils.security import (
     validate_filename,
@@ -281,6 +282,14 @@ def create_individual_lead(
             if len(sanitized_location) > 255:
                 sanitized_location = sanitized_location[:255]
 
+        metadata = {
+            **payload.metadata,
+            "upload_source": "individual",
+            "uploaded_by": current_user.username,
+        }
+        if not payload.auto_assign:
+            metadata["auto_assignment_enabled"] = False
+
         # Create new lead with ownership and sanitized data
         lead = Lead(
             id=uuid4(),
@@ -290,7 +299,7 @@ def create_individual_lead(
             source=sanitized_source,
             location=sanitized_location,
             created_by=current_user.id,
-            _metadata={**payload.metadata, "upload_source": "individual", "uploaded_by": current_user.username},
+            _metadata=metadata,
             current_score=0,
             classification=None,
             status=LeadStatus.NEW,
@@ -309,6 +318,9 @@ def create_individual_lead(
 
         # Refresh to get updated score
         db.refresh(lead)
+
+        if payload.auto_assign:
+            auto_assign_lead(lead.id, db=db)
 
         # Convert to dict format
         lead_dict = {

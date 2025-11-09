@@ -5,6 +5,7 @@ from fastapi import APIRouter
 from .routes import (
     activities_router,
     assignments_router,
+    assignment_rules_router,
     auth_router,
     analytics_router,
     reports_router,
@@ -15,6 +16,9 @@ from .routes import (
     profile_router,
     scoring_router,
     upload_router,
+    ai_router,
+    integrations_router,
+    crm_router,
 )
 
 # Import debug router if it exists
@@ -34,10 +38,14 @@ router.include_router(scoring_router, prefix="/leads", tags=["scoring"])
 router.include_router(upload_router, prefix="/upload", tags=["upload"])
 router.include_router(dashboard_router, prefix="/dashboard", tags=["dashboard"])
 router.include_router(assignments_router, prefix="/assignments", tags=["assignments"])
+router.include_router(assignment_rules_router, prefix="/assignment-rules", tags=["assignment_rules"])
 router.include_router(notes_router, prefix="/notes", tags=["notes"])
 router.include_router(notifications_router, prefix="/notifications", tags=["notifications"])
 router.include_router(analytics_router, prefix="/analytics", tags=["analytics"])
 router.include_router(reports_router, prefix="/reports", tags=["reports"])
+router.include_router(ai_router, prefix="/ai", tags=["ai"])
+router.include_router(integrations_router, prefix="/integrations", tags=["integrations"])
+router.include_router(crm_router, prefix="/crm", tags=["crm"])
 
 # Include debug router if available
 if debug_router:

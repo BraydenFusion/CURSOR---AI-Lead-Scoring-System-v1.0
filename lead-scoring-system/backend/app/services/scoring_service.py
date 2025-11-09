@@ -54,6 +54,17 @@ def _calculate_engagement(activities: Dict[str, int]) -> int:
     return sum(_compute_activity_points(activity, count, ENGAGEMENT_CAPS) for activity, count in activities.items())
 
 
+def _calculate_email_engagement_bonus(lead: Lead) -> int:
+    """Additional engagement points driven by email interactions."""
+    metadata = lead._metadata if isinstance(lead._metadata, dict) else {}
+    engagement = metadata.get("email_engagement", {}) if isinstance(metadata.get("email_engagement"), dict) else {}
+    opens = max(0, int(engagement.get("opens", 0)))
+    clicks = max(0, int(engagement.get("clicks", 0)))
+    replies = max(0, int(engagement.get("replies", 0)))
+    bonus = (opens * 1) + (clicks * 2) + (replies * 5)
+    return min(bonus, 25)
+
+
 def _calculate_buying_signals(activities: Dict[str, int]) -> int:
     return sum(_compute_activity_points(activity, count, BUYING_CAPS) for activity, count in activities.items())
 
@@ -108,7 +119,7 @@ def calculate_lead_score(lead_id: UUID, db: Session | None = None) -> Dict[str, 
 
         counts = _aggregate_activity_counts(activities)
 
-        engagement_points = _calculate_engagement(counts)
+        engagement_points = _calculate_engagement(counts) + _calculate_email_engagement_bonus(lead)
         buying_points = _calculate_buying_signals(counts)
         demographic_points = _calculate_demographic_fit(lead)
 

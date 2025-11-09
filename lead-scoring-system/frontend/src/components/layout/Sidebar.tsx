@@ -10,6 +10,8 @@ import {
   TrendingUp,
   FileText,
   Home,
+  Workflow,
+  Mail,
 } from "lucide-react";
 import clsx from "clsx";
 
@@ -63,6 +65,18 @@ export function Sidebar({ onNavigate, className }: SidebarProps) {
         roles: ["manager", "admin"] as Array<"admin" | "manager" | "sales_rep">,
       },
       {
+        label: "Integrations",
+        icon: Mail,
+        to: "/integrations",
+        roles: ["manager", "admin"] as Array<"admin" | "manager" | "sales_rep">,
+      },
+      {
+        label: "Assignment Rules",
+        icon: Workflow,
+        to: "/assignment-rules",
+        roles: ["manager", "admin"] as Array<"admin" | "manager" | "sales_rep">,
+      },
+      {
         label: "Reports",
         icon: FileText,
         to: "/dashboard/reports",
@@ -77,13 +91,12 @@ export function Sidebar({ onNavigate, className }: SidebarProps) {
       { label: "Settings", icon: Settings, to: "/settings" },
     ];
 
-    // Marketing site quick link
     items.push({ label: "Marketing Site", icon: Home, to: "/" });
 
     return items.filter((item) => {
       if (!item.roles) return true;
       if (!user?.role) return false;
-      return item.roles.includes(user.role);
+      return (item.roles as Array<"admin" | "manager" | "sales_rep">).includes(user.role);
     });
   }, [user?.role]);
 
