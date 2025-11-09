@@ -47,31 +47,31 @@ const main = async () => {
     runCommand("git push origin main", "Git push");
 
     const hookUrl = process.env.DEPLOY_HOOK_URL;
-    if (!hookUrl) {
-      throw new Error("DEPLOY_HOOK_URL is not set in the environment");
+    if (hookUrl) {
+      const payload = {
+        branch: "main",
+        status: "pushed",
+        timestamp: new Date().toISOString(),
+      };
+
+      writeLog("Sending deploy webhook...");
+      const response = await fetch(hookUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const body = await response.text();
+        throw new Error(`Webhook responded with ${response.status}: ${body}`);
+      }
+
+      writeLog(`Node webhook POST success (${response.status})`);
+    } else {
+      writeLog("DEPLOY_HOOK_URL not set—skipping webhook notification");
     }
-
-    const payload = {
-      branch: "main",
-      status: "pushed",
-      timestamp: new Date().toISOString(),
-    };
-
-    writeLog("Sending deploy webhook...");
-    const response = await fetch(hookUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      const body = await response.text();
-      throw new Error(`Webhook responded with ${response.status}: ${body}`);
-    }
-
-    writeLog(`Node webhook POST success (${response.status})`);
     writeLog("Code pushed successfully!");
   } catch (error) {
     writeLog(`Deployment failed - ${error.message}`, false);
