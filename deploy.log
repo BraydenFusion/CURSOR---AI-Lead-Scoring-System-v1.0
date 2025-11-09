@@ -17,3 +17,13 @@
 [2025-11-09 08:53:46] ✅ Code pushed successfully!
 [2025-11-09 08:59:58] ✅ Environment variables loaded
 [2025-11-09 08:59:58] ✅ Starting Git add...
+[2025-11-09 08:59:58] ✅ Git add completed
+[2025-11-09 08:59:58] ✅ Starting Git commit...
+[2025-11-09 08:59:58] ✅ Git commit completed
+[2025-11-09 08:59:58] ✅ Starting Git push...
+[2025-11-09 08:59:58] ✅ Git push completed
+[2025-11-09 08:59:58] ✅ DEPLOY_HOOK_URL not set—skipping webhook notification
+[2025-11-09 08:59:58] ✅ Code pushed successfully!
+[2025-11-09 08:59:59] ❌ Python post-push FAILURE - API_ENDPOINT or API_KEY is missing from environment variables
+[2025-11-09 09:08:02] ✅ Environment variables loaded
+[2025-11-09 09:08:02] ✅ Starting Git add...

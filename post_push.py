@@ -38,8 +38,13 @@ def main() -> None:
         api_endpoint = os.getenv("API_ENDPOINT")
         api_key = os.getenv("API_KEY")
 
-        if not api_endpoint or not api_key:
-            raise ValueError("API_ENDPOINT or API_KEY is missing from environment variables")
+        if not api_endpoint:
+            write_log("API_ENDPOINT not set—skipping post-push notification")
+            return
+
+        if not api_key:
+            write_log("API_KEY not set—skipping post-push notification")
+            return
 
         payload = {
             "event": "deploy_triggered",
