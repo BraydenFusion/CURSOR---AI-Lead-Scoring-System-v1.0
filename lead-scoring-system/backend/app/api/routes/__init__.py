@@ -15,6 +15,7 @@ from .analytics import router as analytics_router
 from .reports import router as reports_router
 from .ai import router as ai_router
 from .integrations import router as integrations_router
+from .crm import router as crm_router
 
 # Import debug router if it exists
 try:
@@ -38,6 +39,7 @@ __all__ = [
     "reports_router",
     "ai_router",
     "integrations_router",
+    "crm_router",
 ]
 
 if debug_router:

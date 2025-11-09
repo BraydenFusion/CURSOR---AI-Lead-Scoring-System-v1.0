@@ -41,6 +41,15 @@ from .integrations import (
     OAuthConnectResponse,
     OAuthCallbackResponse,
 )
+from .crm import (
+    CRMIntegrationRead,
+    SalesforceConnectRequest,
+    HubSpotConnectRequest,
+    CRMSyncTriggerRequest,
+    SyncLogRead,
+    SyncStatusResponse,
+    ConflictResolutionRequest,
+)
 
 __all__ = [
     "LeadCreate",
@@ -89,4 +98,11 @@ __all__ = [
     "SendEmailRequest",
     "OAuthConnectResponse",
     "OAuthCallbackResponse",
+    "CRMIntegrationRead",
+    "SalesforceConnectRequest",
+    "HubSpotConnectRequest",
+    "CRMSyncTriggerRequest",
+    "SyncLogRead",
+    "SyncStatusResponse",
+    "ConflictResolutionRequest",
 ]

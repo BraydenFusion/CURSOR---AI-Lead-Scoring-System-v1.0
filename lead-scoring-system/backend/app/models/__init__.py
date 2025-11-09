@@ -11,6 +11,7 @@ from .ai_scoring import LeadScore, LeadEngagementEvent, LeadInsight
 from .report import SavedReport
 from .assignment_rule import AssignmentRule
 from .email_integration import EmailAccount, EmailMessage
+from .crm_integration import CRMIntegration, SyncLog
 
 __all__ = [
     "Lead",
@@ -30,4 +31,6 @@ __all__ = [
     "AssignmentRule",
     "EmailAccount",
     "EmailMessage",
+    "CRMIntegration",
+    "SyncLog",
 ]

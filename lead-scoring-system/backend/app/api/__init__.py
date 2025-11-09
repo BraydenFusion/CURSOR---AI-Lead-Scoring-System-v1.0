@@ -18,6 +18,7 @@ from .routes import (
     upload_router,
     ai_router,
     integrations_router,
+    crm_router,
 )
 
 # Import debug router if it exists
@@ -44,6 +45,7 @@ router.include_router(analytics_router, prefix="/analytics", tags=["analytics"])
 router.include_router(reports_router, prefix="/reports", tags=["reports"])
 router.include_router(ai_router, prefix="/ai", tags=["ai"])
 router.include_router(integrations_router, prefix="/integrations", tags=["integrations"])
+router.include_router(crm_router, prefix="/crm", tags=["crm"])
 
 # Include debug router if available
 if debug_router:

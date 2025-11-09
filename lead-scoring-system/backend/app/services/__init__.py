@@ -9,6 +9,13 @@ from .email_sync import (
     sync_all_email_accounts,
     send_email_via_integration,
 )
+from .crm_sync import (
+    sync_to_salesforce,
+    sync_from_salesforce,
+    sync_to_hubspot,
+    sync_from_hubspot,
+    resolve_conflicts,
+)
 
 __all__ = [
     "calculate_lead_score",
@@ -22,4 +29,9 @@ __all__ = [
     "sync_outlook_emails",
     "sync_all_email_accounts",
     "send_email_via_integration",
+    "sync_to_salesforce",
+    "sync_from_salesforce",
+    "sync_to_hubspot",
+    "sync_from_hubspot",
+    "resolve_conflicts",
 ]

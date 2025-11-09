@@ -15,9 +15,11 @@ export type Lead = {
   location?: string | null;
   current_score: number;
   classification: Classification;
+  status?: string;
   created_at: string;
   updated_at: string;
   score_breakdown?: ScoreBreakdown;
+  metadata?: Record<string, unknown>;
 };
 
 export type LeadListResponse = {
@@ -151,4 +153,53 @@ export type EmailSendPayload = {
   subject: string;
   body: string;
   recipients?: string[];
+};
+
+export type CRMProvider = "salesforce" | "hubspot";
+export type CRMSyncDirection = "to_crm" | "from_crm" | "bidirectional";
+export type CRMSyncFrequency = "manual" | "hourly" | "daily";
+export type CRMConflictStrategy = "manual" | "prefer_crm" | "prefer_local";
+export type CRMSyncStatus = "running" | "success" | "partial" | "failed";
+
+export type CRMFieldMappingEntry = {
+  local_field: string;
+  remote_field: string;
+  transform?: string | null;
+};
+
+export type CRMIntegration = {
+  id: number;
+  provider: CRMProvider;
+  sync_direction: CRMSyncDirection;
+  sync_frequency: CRMSyncFrequency;
+  field_mappings: CRMFieldMappingEntry[];
+  conflict_strategy: CRMConflictStrategy;
+  last_sync?: string | null;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CRMSyncLog = {
+  id: number;
+  integration_id: number;
+  sync_started: string;
+  sync_completed?: string | null;
+  records_synced: number;
+  errors?: Array<Record<string, unknown>> | null;
+  status: CRMSyncStatus;
+  direction: CRMSyncDirection;
+  provider: CRMProvider;
+};
+
+export type CRMConflictRecord = {
+  record_id: string;
+  local_data: Record<string, unknown>;
+  remote_data: Record<string, unknown>;
+  preferred_source: "local" | "remote";
+};
+
+export type CRMSyncStatusResponse = {
+  integration: CRMIntegration | null;
+  latest_log: CRMSyncLog | null;
 };

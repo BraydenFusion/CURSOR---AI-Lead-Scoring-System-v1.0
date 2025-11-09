@@ -36,6 +36,12 @@ class Settings(BaseSettings):
     # Encryption key for storing third-party tokens securely (Fernet base64 key)
     email_encryption_key: str = Field(default="", validation_alias="EMAIL_ENCRYPTION_KEY")
 
+    # CRM defaults and tuning
+    salesforce_default_domain: str = Field(default="login", validation_alias="SALESFORCE_DEFAULT_DOMAIN")
+    hubspot_base_url: str = Field(default="https://api.hubapi.com", validation_alias="HUBSPOT_BASE_URL")
+    crm_sync_interval_seconds: int = Field(default=3600, validation_alias="CRM_SYNC_INTERVAL_SECONDS")
+    crm_sync_max_retries: int = Field(default=3, validation_alias="CRM_SYNC_MAX_RETRIES")
+
     # Database - Railway provides DATABASE_URL automatically
     # Handle both postgres:// (Railway) and postgresql:// formats
     database_url_str: str = Field(
