@@ -122,3 +122,33 @@ export type NextBestActionResponse = {
   recommended_actions: AIActionItem[];
   generated_at: string;
 };
+
+export type EmailProvider = "gmail" | "outlook";
+
+export type EmailAccount = {
+  id: number;
+  provider: EmailProvider;
+  email_address: string;
+  connected_at: string;
+  last_sync?: string | null;
+  auto_sync_enabled: boolean;
+};
+
+export type EmailMessage = {
+  id: number;
+  subject: string;
+  sender: string;
+  recipients: string[];
+  body_text: string;
+  sent_at: string;
+  direction: "sent" | "received";
+  read: boolean;
+};
+
+export type EmailSendPayload = {
+  email_account_id: number;
+  lead_id: string;
+  subject: string;
+  body: string;
+  recipients?: string[];
+};

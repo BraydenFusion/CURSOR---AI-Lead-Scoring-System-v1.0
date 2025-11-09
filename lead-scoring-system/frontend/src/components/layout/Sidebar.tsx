@@ -11,6 +11,7 @@ import {
   FileText,
   Home,
   Workflow,
+  Mail,
 } from "lucide-react";
 import clsx from "clsx";
 
@@ -61,6 +62,12 @@ export function Sidebar({ onNavigate, className }: SidebarProps) {
         label: "Analytics",
         icon: TrendingUp,
         to: "/dashboard/analytics",
+        roles: ["manager", "admin"] as Array<"admin" | "manager" | "sales_rep">,
+      },
+      {
+        label: "Integrations",
+        icon: Mail,
+        to: "/integrations",
         roles: ["manager", "admin"] as Array<"admin" | "manager" | "sales_rep">,
       },
       {

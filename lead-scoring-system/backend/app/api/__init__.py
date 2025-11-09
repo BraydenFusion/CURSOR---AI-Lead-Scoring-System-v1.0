@@ -17,6 +17,7 @@ from .routes import (
     scoring_router,
     upload_router,
     ai_router,
+    integrations_router,
 )
 
 # Import debug router if it exists
@@ -42,6 +43,7 @@ router.include_router(notifications_router, prefix="/notifications", tags=["noti
 router.include_router(analytics_router, prefix="/analytics", tags=["analytics"])
 router.include_router(reports_router, prefix="/reports", tags=["reports"])
 router.include_router(ai_router, prefix="/ai", tags=["ai"])
+router.include_router(integrations_router, prefix="/integrations", tags=["integrations"])
 
 # Include debug router if available
 if debug_router:

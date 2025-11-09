@@ -23,8 +23,18 @@ class Settings(BaseSettings):
     # OpenAI API Key for AI-powered lead scoring
     openai_api_key: str = Field(default="", validation_alias="OPENAI_API_KEY")
     
-    # Google OAuth for Google Sign-In
+    # Google OAuth for Google Sign-In / Email integration
     google_client_id: Optional[str] = Field(default=None, validation_alias="GOOGLE_CLIENT_ID")
+    google_client_secret: Optional[str] = Field(default=None, validation_alias="GOOGLE_CLIENT_SECRET")
+    google_oauth_redirect_uri: Optional[str] = Field(default=None, validation_alias="GOOGLE_OAUTH_REDIRECT_URI")
+
+    # Outlook OAuth (Microsoft Graph)
+    outlook_client_id: Optional[str] = Field(default=None, validation_alias="OUTLOOK_CLIENT_ID")
+    outlook_client_secret: Optional[str] = Field(default=None, validation_alias="OUTLOOK_CLIENT_SECRET")
+    outlook_oauth_redirect_uri: Optional[str] = Field(default=None, validation_alias="OUTLOOK_OAUTH_REDIRECT_URI")
+
+    # Encryption key for storing third-party tokens securely (Fernet base64 key)
+    email_encryption_key: str = Field(default="", validation_alias="EMAIL_ENCRYPTION_KEY")
 
     # Database - Railway provides DATABASE_URL automatically
     # Handle both postgres:// (Railway) and postgresql:// formats

@@ -10,6 +10,7 @@ from .notification import Notification, NotificationType
 from .ai_scoring import LeadScore, LeadEngagementEvent, LeadInsight
 from .report import SavedReport
 from .assignment_rule import AssignmentRule
+from .email_integration import EmailAccount, EmailMessage
 
 __all__ = [
     "Lead",
@@ -27,4 +28,6 @@ __all__ = [
     "LeadInsight",
     "SavedReport",
     "AssignmentRule",
+    "EmailAccount",
+    "EmailMessage",
 ]

@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { DashboardLayout } from "../components/layout/DashboardLayout";
 import { AIInsightsPanel } from "../components/leads/AIInsightsPanel";
+import LeadEmailPanel from "../components/leads/LeadEmailPanel";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
@@ -31,7 +32,7 @@ export function LeadDetailPage() {
   const queryClient = useQueryClient();
   const [newNote, setNewNote] = useState("");
   const [noteType, setNoteType] = useState("general");
-  const [activeTab, setActiveTab] = useState<"overview" | "ai">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "ai" | "email">("overview");
 
   const { data: lead } = useQuery({
     queryKey: ["lead", leadId],
@@ -154,10 +155,19 @@ export function LeadDetailPage() {
         >
           AI Insights
         </Button>
+        <Button
+          variant={activeTab === "email" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setActiveTab("email")}
+        >
+          Emails
+        </Button>
       </div>
 
       {activeTab === "ai" && leadId ? (
         <AIInsightsPanel leadId={leadId} leadName={lead.name} />
+      ) : activeTab === "email" && leadId ? (
+        <LeadEmailPanel leadId={leadId} leadEmail={lead.email} leadName={lead.name} />
       ) : (
         <>
           <Card className="mb-6">

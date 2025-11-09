@@ -28,6 +28,7 @@ import logging
 
 from .utils.logger import setup_logging
 from .config import get_settings
+from .tasks.email_scheduler import start_email_sync_scheduler
 
 settings = get_settings()
 
@@ -948,3 +949,4 @@ app.add_exception_handler(Exception, global_exception_handler)
 
 # Configure routers
 configure_routers(app)
+start_email_sync_scheduler(app)

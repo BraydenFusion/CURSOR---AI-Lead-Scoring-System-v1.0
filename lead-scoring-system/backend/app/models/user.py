@@ -62,6 +62,11 @@ class User(Base):
         back_populates="user",
         cascade="all, delete-orphan"
     )
+    email_accounts = relationship(
+        "EmailAccount",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )
     
     def get_role_enum(self) -> UserRole:
         """Get role as UserRole enum."""

@@ -34,6 +34,13 @@ from .ai import (
     ConversionProbability,
     TalkingPoint,
 )
+from .integrations import (
+    EmailAccountRead,
+    EmailMessageRead,
+    SendEmailRequest,
+    OAuthConnectResponse,
+    OAuthCallbackResponse,
+)
 
 __all__ = [
     "LeadCreate",
@@ -77,4 +84,9 @@ __all__ = [
     "ActionItem",
     "ConversionProbability",
     "TalkingPoint",
+    "EmailAccountRead",
+    "EmailMessageRead",
+    "SendEmailRequest",
+    "OAuthConnectResponse",
+    "OAuthCallbackResponse",
 ]
