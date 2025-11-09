@@ -21,6 +21,7 @@ from .routes import (
     crm_router,
     api_keys_router,
     webhooks_router,
+    import_export_router,
 )
 from .public.v1 import router as public_v1_router, docs_router as public_docs_router
 
@@ -51,6 +52,7 @@ router.include_router(integrations_router, prefix="/integrations", tags=["integr
 router.include_router(crm_router, prefix="/crm", tags=["crm"])
 router.include_router(api_keys_router, tags=["api_keys"])
 router.include_router(webhooks_router, tags=["webhooks"])
+router.include_router(import_export_router, tags=["import_export"])
 router.include_router(public_v1_router, prefix="/v1")
 router.include_router(public_docs_router, prefix="/v1")
 

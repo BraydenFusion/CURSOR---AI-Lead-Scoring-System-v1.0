@@ -16,6 +16,7 @@ import {
   Webhook,
   BookOpen,
   GaugeCircle,
+  FileSpreadsheet,
 } from "lucide-react";
 import clsx from "clsx";
 
@@ -78,6 +79,12 @@ export function Sidebar({ onNavigate, className }: SidebarProps) {
         label: "Assignment Rules",
         icon: Workflow,
         to: "/assignment-rules",
+        roles: ["manager", "admin"] as Array<"admin" | "manager" | "sales_rep">,
+      },
+      {
+        label: "Import / Export",
+        icon: FileSpreadsheet,
+        to: "/leads/import-export",
         roles: ["manager", "admin"] as Array<"admin" | "manager" | "sales_rep">,
       },
       {

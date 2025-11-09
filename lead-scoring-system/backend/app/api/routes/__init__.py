@@ -18,6 +18,7 @@ from .integrations import router as integrations_router
 from .crm import router as crm_router
 from .api_keys import router as api_keys_router
 from .webhooks import router as webhooks_router
+from .import_export import router as import_export_router
 
 # Import debug router if it exists
 try:
@@ -44,6 +45,7 @@ __all__ = [
     "crm_router",
     "api_keys_router",
     "webhooks_router",
+    "import_export_router",
 ]
 
 if debug_router:

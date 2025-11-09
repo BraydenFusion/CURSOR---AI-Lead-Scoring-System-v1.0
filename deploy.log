@@ -37,3 +37,13 @@
 [2025-11-09 09:08:04] ❌ Python post-push FAILURE - 502 Server Error: Bad Gateway for url: https://backend-base.up.railway.app/api
 [2025-11-09 09:11:56] ✅ Environment variables loaded
 [2025-11-09 09:11:56] ✅ Starting Git add...
+[2025-11-09 09:11:56] ✅ Git add completed
+[2025-11-09 09:11:56] ✅ Starting Git commit...
+[2025-11-09 09:11:56] ✅ Git commit completed
+[2025-11-09 09:11:56] ✅ Starting Git push...
+[2025-11-09 09:11:57] ✅ Git push completed
+[2025-11-09 09:11:57] ✅ DEPLOY_HOOK_URL not set—skipping webhook notification
+[2025-11-09 09:11:57] ✅ Code pushed successfully!
+[2025-11-09 09:11:57] ❌ Python post-push FAILURE - HTTP 502 for https://backend-base.up.railway.app/api
+[2025-11-09 14:27:40] ✅ Environment variables loaded
+[2025-11-09 14:27:40] ✅ Starting Git add...

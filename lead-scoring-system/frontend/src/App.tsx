@@ -28,6 +28,7 @@ import { APIKeysPage } from "./pages/APIKeys";
 import { WebhooksPage } from "./pages/Webhooks";
 import { APIDocsPage } from "./pages/APIDocs";
 import { RateLimitsUsagePage } from "./pages/RateLimitsUsage";
+import ImportExportPage from "./pages/ImportExport";
 
 // Role-based dashboard redirect component
 function DashboardRedirect() {
@@ -112,6 +113,14 @@ function App() {
                 element={
                   <ProtectedRoute allowedRoles={["admin", "manager"]}>
                     <IntegrationsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/leads/import-export"
+                element={
+                  <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                    <ImportExportPage />
                   </ProtectedRoute>
                 }
               />

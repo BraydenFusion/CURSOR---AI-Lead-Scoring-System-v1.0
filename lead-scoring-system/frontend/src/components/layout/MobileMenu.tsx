@@ -17,6 +17,7 @@ import {
   Webhook,
   BookOpen,
   GaugeCircle,
+  FileSpreadsheet,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
@@ -76,6 +77,12 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
       label: "Assignment Rules",
       icon: Workflow,
       to: "/assignment-rules",
+      roles: ["manager", "admin"] as Array<"admin" | "manager" | "sales_rep">,
+    },
+    {
+      label: "Import / Export",
+      icon: FileSpreadsheet,
+      to: "/leads/import-export",
       roles: ["manager", "admin"] as Array<"admin" | "manager" | "sales_rep">,
     },
     {
