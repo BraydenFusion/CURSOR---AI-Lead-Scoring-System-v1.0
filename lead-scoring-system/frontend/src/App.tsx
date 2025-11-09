@@ -22,6 +22,12 @@ import { OnboardingPage } from "./pages/OnboardingPage";
 import { LegacyDashboardPage } from "./pages/LegacyDashboardPage";
 import { AnalyticsDashboard } from "./pages/AnalyticsDashboard";
 import { ReportBuilder } from "./pages/ReportBuilder";
+import { AssignmentRules } from "./pages/AssignmentRules";
+import IntegrationsPage from "./pages/Integrations";
+import { APIKeysPage } from "./pages/APIKeys";
+import { WebhooksPage } from "./pages/Webhooks";
+import { APIDocsPage } from "./pages/APIDocs";
+import { RateLimitsUsagePage } from "./pages/RateLimitsUsage";
 
 // Role-based dashboard redirect component
 function DashboardRedirect() {
@@ -77,22 +83,70 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/dashboard/analytics"
-              element={
-                <ProtectedRoute allowedRoles={["admin", "manager"]}>
-                  <AnalyticsDashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard/reports"
-              element={
-                <ProtectedRoute allowedRoles={["admin", "manager"]}>
-                  <ReportBuilder />
-                </ProtectedRoute>
-              }
-            />
+              <Route
+                path="/dashboard/analytics"
+                element={
+                  <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                    <AnalyticsDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard/reports"
+                element={
+                  <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                    <ReportBuilder />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/assignment-rules"
+                element={
+                  <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                    <AssignmentRules />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/integrations"
+                element={
+                  <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                    <IntegrationsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/developers/api-keys"
+                element={
+                  <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                    <APIKeysPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/developers/webhooks"
+                element={
+                  <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                    <WebhooksPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/developers/docs"
+                element={
+                  <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                    <APIDocsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/developers/rate-limits"
+                element={
+                  <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                    <RateLimitsUsagePage />
+                  </ProtectedRoute>
+                }
+              />
             <Route
               path="/dashboard"
               element={

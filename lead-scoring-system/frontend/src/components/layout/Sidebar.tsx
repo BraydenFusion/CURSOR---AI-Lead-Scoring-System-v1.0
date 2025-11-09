@@ -10,6 +10,12 @@ import {
   TrendingUp,
   FileText,
   Home,
+  Workflow,
+  Mail,
+  KeyRound,
+  Webhook,
+  BookOpen,
+  GaugeCircle,
 } from "lucide-react";
 import clsx from "clsx";
 
@@ -40,7 +46,7 @@ export function Sidebar({ onNavigate, className }: SidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const navItems = useMemo<NavItem[]>(() => {
+  const { mainItems, developerItems } = useMemo(() => {
     const items: NavItem[] = [
       { label: "Dashboard", icon: LayoutDashboard, to: getDashboardPath(user?.role) },
       {
@@ -63,6 +69,18 @@ export function Sidebar({ onNavigate, className }: SidebarProps) {
         roles: ["manager", "admin"] as Array<"admin" | "manager" | "sales_rep">,
       },
       {
+        label: "Integrations",
+        icon: Mail,
+        to: "/integrations",
+        roles: ["manager", "admin"] as Array<"admin" | "manager" | "sales_rep">,
+      },
+      {
+        label: "Assignment Rules",
+        icon: Workflow,
+        to: "/assignment-rules",
+        roles: ["manager", "admin"] as Array<"admin" | "manager" | "sales_rep">,
+      },
+      {
         label: "Reports",
         icon: FileText,
         to: "/dashboard/reports",
@@ -77,14 +95,46 @@ export function Sidebar({ onNavigate, className }: SidebarProps) {
       { label: "Settings", icon: Settings, to: "/settings" },
     ];
 
-    // Marketing site quick link
     items.push({ label: "Marketing Site", icon: Home, to: "/" });
 
-    return items.filter((item) => {
+    const filteredMain = items.filter((item) => {
+      if (!item.roles) return true;
+      if (!user?.role) return false;
+      return (item.roles as Array<"admin" | "manager" | "sales_rep">).includes(user.role);
+    });
+
+    const developerItems: NavItem[] = [
+      {
+        label: "API Keys",
+        icon: KeyRound,
+        to: "/developers/api-keys",
+        roles: ["manager", "admin"] as Array<"admin" | "manager" | "sales_rep">,
+      },
+      {
+        label: "Webhooks",
+        icon: Webhook,
+        to: "/developers/webhooks",
+        roles: ["manager", "admin"] as Array<"admin" | "manager" | "sales_rep">,
+      },
+      {
+        label: "API Documentation",
+        icon: BookOpen,
+        to: "/developers/docs",
+        roles: ["manager", "admin"] as Array<"admin" | "manager" | "sales_rep">,
+      },
+      {
+        label: "Rate Limits Usage",
+        icon: GaugeCircle,
+        to: "/developers/rate-limits",
+        roles: ["manager", "admin"] as Array<"admin" | "manager" | "sales_rep">,
+      },
+    ].filter((item) => {
       if (!item.roles) return true;
       if (!user?.role) return false;
       return item.roles.includes(user.role);
     });
+
+    return { mainItems: filteredMain, developerItems };
   }, [user?.role]);
 
   const handleNavigate = (path: string) => {
@@ -106,8 +156,33 @@ export function Sidebar({ onNavigate, className }: SidebarProps) {
         </div>
       </div>
 
-      <nav className="flex-1 space-y-1 px-4 py-6">
-        {navItems.map((item) => {
+      <nav className="flex-1 space-y-4 px-4 py-6">
+        <div className="space-y-1">
+          {mainItems.map((item) => {
+            const isActive = location.pathname.startsWith(item.to);
+            const Icon = item.icon;
+            return (
+              <button
+                key={item.to}
+                onClick={() => handleNavigate(item.to)}
+                className={clsx(
+                  "flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm font-medium transition",
+                  isActive
+                    ? "bg-navy-50 text-navy-700"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
+                )}
+              >
+                <Icon className="h-4 w-4" />
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {developerItems.length > 0 && (
+          <div className="space-y-1">
+            <p className="px-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Developers</p>
+            {developerItems.map((item) => {
           const isActive = location.pathname.startsWith(item.to);
           const Icon = item.icon;
           return (
@@ -126,6 +201,8 @@ export function Sidebar({ onNavigate, className }: SidebarProps) {
             </button>
           );
         })}
+          </div>
+        )}
       </nav>
 
       <div className="border-t border-slate-200 px-4 py-4">

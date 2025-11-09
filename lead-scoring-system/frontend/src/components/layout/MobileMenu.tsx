@@ -11,6 +11,12 @@ import {
   FileText,
   Home,
   LogOut,
+  Workflow,
+  Mail,
+  KeyRound,
+  Webhook,
+  BookOpen,
+  GaugeCircle,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
@@ -61,6 +67,18 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
       roles: ["manager", "admin"] as Array<"admin" | "manager" | "sales_rep">,
     },
     {
+      label: "Integrations",
+      icon: Mail,
+      to: "/integrations",
+      roles: ["manager", "admin"] as Array<"admin" | "manager" | "sales_rep">,
+    },
+    {
+      label: "Assignment Rules",
+      icon: Workflow,
+      to: "/assignment-rules",
+      roles: ["manager", "admin"] as Array<"admin" | "manager" | "sales_rep">,
+    },
+    {
       label: "Reports",
       icon: FileText,
       to: "/dashboard/reports",
@@ -74,6 +92,30 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
     },
     { label: "Settings", icon: Settings, to: "/settings" },
     { label: "Marketing Site", icon: Home, to: "/" },
+    {
+      label: "API Keys",
+      icon: KeyRound,
+      to: "/developers/api-keys",
+      roles: ["manager", "admin"] as Array<"admin" | "manager" | "sales_rep">,
+    },
+    {
+      label: "Webhooks",
+      icon: Webhook,
+      to: "/developers/webhooks",
+      roles: ["manager", "admin"] as Array<"admin" | "manager" | "sales_rep">,
+    },
+    {
+      label: "API Documentation",
+      icon: BookOpen,
+      to: "/developers/docs",
+      roles: ["manager", "admin"] as Array<"admin" | "manager" | "sales_rep">,
+    },
+    {
+      label: "Rate Limits Usage",
+      icon: GaugeCircle,
+      to: "/developers/rate-limits",
+      roles: ["manager", "admin"] as Array<"admin" | "manager" | "sales_rep">,
+    },
   ].filter((item) => {
     if (!item.roles) return true;
     if (!user?.role) return false;

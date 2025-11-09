@@ -67,6 +67,3 @@ Once logged in as a Sales Rep, you can:
 - The script is idempotent - it's safe to run multiple times
 
 ---
-
-**Ready to go!** Just wait for Railway to redeploy, then log in with the credentials above! 🚀
-

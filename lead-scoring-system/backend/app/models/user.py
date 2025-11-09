@@ -62,6 +62,26 @@ class User(Base):
         back_populates="user",
         cascade="all, delete-orphan"
     )
+    email_accounts = relationship(
+        "EmailAccount",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )
+    crm_integrations = relationship(
+        "CRMIntegration",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )
+    api_keys = relationship(
+        "APIKey",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )
+    webhooks = relationship(
+        "Webhook",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )
     
     def get_role_enum(self) -> UserRole:
         """Get role as UserRole enum."""

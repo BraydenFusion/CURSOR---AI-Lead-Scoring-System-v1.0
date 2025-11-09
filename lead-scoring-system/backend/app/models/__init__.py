@@ -9,6 +9,10 @@ from .note import LeadNote
 from .notification import Notification, NotificationType
 from .ai_scoring import LeadScore, LeadEngagementEvent, LeadInsight
 from .report import SavedReport
+from .assignment_rule import AssignmentRule
+from .email_integration import EmailAccount, EmailMessage
+from .crm_integration import CRMIntegration, SyncLog
+from .api_key import APIKey, Webhook, WebhookDelivery
 
 __all__ = [
     "Lead",
@@ -25,4 +29,12 @@ __all__ = [
     "LeadEngagementEvent",
     "LeadInsight",
     "SavedReport",
+    "AssignmentRule",
+    "EmailAccount",
+    "EmailMessage",
+    "CRMIntegration",
+    "SyncLog",
+    "APIKey",
+    "Webhook",
+    "WebhookDelivery",
 ]

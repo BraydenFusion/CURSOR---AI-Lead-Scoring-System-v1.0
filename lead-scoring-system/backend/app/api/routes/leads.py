@@ -3,7 +3,7 @@
 from typing import Optional
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy import desc
 from sqlalchemy.orm import Session, joinedload
 
@@ -14,6 +14,7 @@ from ...models.lead import Lead
 from ...models.user import User
 from ...schemas import LeadCreate, LeadListResponse, LeadRead, LeadStatusUpdate
 from ...services.scoring_service import calculate_lead_score
+from ...services import auto_assign_lead
 from ...utils.auth import get_current_active_user
 
 
@@ -23,6 +24,7 @@ router = APIRouter()
 @router.post("", response_model=LeadRead, status_code=status.HTTP_201_CREATED)
 def create_lead(
     payload: LeadCreate,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ) -> LeadRead:
@@ -64,6 +66,9 @@ def create_lead(
 
         # Refresh to get updated score
         db.refresh(lead)
+
+        if payload.auto_assign:
+            background_tasks.add_task(auto_assign_lead, lead.id)
 
         # Convert to dict format, mapping _metadata to metadata
         lead_dict = {

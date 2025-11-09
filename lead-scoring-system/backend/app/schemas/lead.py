@@ -19,7 +19,7 @@ class LeadBase(BaseModel):
 
 
 class LeadCreate(LeadBase):
-    pass
+    auto_assign: bool = Field(default=True, description="Automatically assign this lead using active assignment rules.")
 
 
 class LeadUpdate(BaseModel):

@@ -21,10 +21,25 @@ class Settings(BaseSettings):
     environment: str = Field(default="development")
     
     # OpenAI API Key for AI-powered lead scoring
-    openai_api_key: Optional[str] = Field(default=None, validation_alias="OPENAI_API_KEY")
+    openai_api_key: str = Field(default="", validation_alias="OPENAI_API_KEY")
     
-    # Google OAuth for Google Sign-In
+    # Google OAuth for Google Sign-In / Email integration
     google_client_id: Optional[str] = Field(default=None, validation_alias="GOOGLE_CLIENT_ID")
+    google_client_secret: Optional[str] = Field(default=None, validation_alias="GOOGLE_CLIENT_SECRET")
+    google_oauth_redirect_uri: Optional[str] = Field(default=None, validation_alias="GOOGLE_OAUTH_REDIRECT_URI")
+
+    # Outlook OAuth (Microsoft Graph)
+    outlook_client_id: Optional[str] = Field(default=None, validation_alias="OUTLOOK_CLIENT_ID")
+    outlook_client_secret: Optional[str] = Field(default=None, validation_alias="OUTLOOK_CLIENT_SECRET")
+    outlook_oauth_redirect_uri: Optional[str] = Field(default=None, validation_alias="OUTLOOK_OAUTH_REDIRECT_URI")
+
+    # Encryption key for storing third-party tokens securely (Fernet base64 key)
+    email_encryption_key: str = Field(default="", validation_alias="EMAIL_ENCRYPTION_KEY")
+
+    # CRM defaults and tuning
+    pipedrive_base_url: str = Field(default="https://api.pipedrive.com/v1", validation_alias="PIPEDRIVE_BASE_URL")
+    crm_sync_interval_seconds: int = Field(default=3600, validation_alias="CRM_SYNC_INTERVAL_SECONDS")
+    crm_sync_max_retries: int = Field(default=3, validation_alias="CRM_SYNC_MAX_RETRIES")
 
     # Database - Railway provides DATABASE_URL automatically
     # Handle both postgres:// (Railway) and postgresql:// formats
@@ -148,6 +163,10 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = Field(
         default=60 * 24,  # 24 hours
         description="JWT access token expiration time in minutes.",
+    )
+    public_api_default_rate_limit: int = Field(
+        default=100,
+        description="Default requests per hour for public API keys.",
     )
 
     # Email/SMTP Configuration (Optional)

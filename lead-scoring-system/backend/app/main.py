@@ -2,21 +2,21 @@
 
 import os
 from datetime import datetime
+import logging
+
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse
-from starlette.exceptions import HTTPException as StarletteHTTPException
-from sqlalchemy.exc import SQLAlchemyError
+from fastapi.responses import JSONResponse
 from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from .api import router as api_router
-from .middleware.rate_limit import configure_rate_limiting
-from .middleware.security_headers import SecurityHeadersMiddleware
-from .middleware.request_limits import RequestLimitsMiddleware
-from .middleware.request_validation import RequestValidationMiddleware
-from .middleware.connection_pool_monitor import ConnectionPoolMonitor
+from .cache import redis_client
+from .config import get_settings
 from .middleware.circuit_breaker import CircuitBreakerMiddleware
+from .middleware.connection_pool_monitor import ConnectionPoolMonitor
 from .middleware.cors_fix import CORSFixMiddleware
 from .middleware.error_handler import (
     database_exception_handler,
@@ -24,10 +24,13 @@ from .middleware.error_handler import (
     http_exception_handler,
     validation_exception_handler,
 )
-import logging
-
+from .middleware.rate_limit import configure_rate_limiting
+from .middleware.request_limits import RequestLimitsMiddleware
+from .middleware.request_validation import RequestValidationMiddleware
+from .middleware.security_headers import SecurityHeadersMiddleware
+from .tasks.crm_scheduler import start_crm_sync_scheduler
+from .tasks.email_scheduler import start_email_sync_scheduler
 from .utils.logger import setup_logging
-from .config import get_settings
 
 settings = get_settings()
 
@@ -225,535 +228,365 @@ def root():
     }
 
 
-async def get_health_data():
-    """Get health status data."""
-    health_status = {
-        "status": "healthy",
-        "environment": settings.railway_environment or settings.environment,
-        "timestamp": datetime.utcnow().isoformat(),
-    }
-    
-    # Check database connection
+def check_database() -> str:
+    """Return database connectivity status."""
     try:
         from app.database import engine
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
-        health_status["database"] = "connected"
-        
-        # Add connection pool metrics
-        pool = engine.pool
-        max_overflow = getattr(pool, "_max_overflow", 0)
-        pool_size = pool.size()
-        checked_in = pool.checkedin()
-        checked_out = pool.checkedout()
-        overflow = pool.overflow()
-        total_available = pool_size + max_overflow
-        
-        health_status["database_pool"] = {
-            "size": pool_size,
-            "checked_in": checked_in,
-            "checked_out": checked_out,
-            "overflow": overflow,
-            "max_overflow": max_overflow,
-            "total_available": total_available,
-            "utilization_percent": round(
-                ((checked_out / total_available) * 100) if total_available > 0 else 0,
-                2
-            )
-        }
-    except Exception as e:
-        health_status["database"] = "disconnected"
-        health_status["status"] = "degraded"
-        health_status["database_error"] = str(e)
-        
-        # Add specific error type detection for better diagnostics
-        error_str = str(e)
-        if "Name or service not known" in error_str or "[Errno -2]" in error_str:
-            health_status["error_type"] = "dns_resolution_failure"
-            health_status["error_message"] = (
-                "Database hostname cannot be resolved. "
-                "Check DATABASE_URL in Railway Backend → Variables. "
-                "Ensure it's a direct URL, not a variable reference (${{ }})."
-            )
-        elif "127.0.0.1" in error_str or "localhost:5433" in error_str:
-            health_status["error_type"] = "localhost_connection"
-            health_status["error_message"] = (
-                "Backend is trying to connect to localhost. "
-                "DATABASE_URL is not set. Connect PostgreSQL service to Backend in Railway."
-            )
-        elif "Connection refused" in error_str:
-            health_status["error_type"] = "connection_refused"
-            health_status["error_message"] = (
-                "Database connection refused. PostgreSQL may not be running or accessible."
-            )
-        
-        logger.warning(f"Database health check failed: {e}")
-    
-    # Check circuit breaker status
+        return "connected"
+    except Exception as exc:  # pragma: no cover - network/resource dependent
+        logger.warning("Database health check failed: %s", exc)
+        return "disconnected"
+
+
+def check_redis() -> str:
+    """Return Redis connectivity status."""
     try:
-        from app.middleware.circuit_breaker import circuit_breaker
-        health_status["circuit_breaker"] = {
-            "state": circuit_breaker.state.value,
-            "failure_count": circuit_breaker.failure_count,
-            "failure_threshold": circuit_breaker.failure_threshold,
+        redis_client.ping()
+        return "connected"
+    except Exception as exc:  # pragma: no cover - network/resource dependent
+        logger.warning("Redis health check failed: %s", exc)
+        return "disconnected"
+
+
+def collect_health_data() -> dict:
+    """Gather current metrics about system health."""
+    data: dict = {
+        "status": "healthy",
+        "environment": settings.railway_environment or settings.environment,
+        "timestamp": datetime.utcnow().isoformat(),
+    }
+
+    try:
+        from app.database import engine
+
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+
+        pool = engine.pool
+        data["database"] = {
+            "status": "connected",
+            "pool": {
+                "size": getattr(pool, "size", lambda: 0)(),
+                "checked_in": getattr(pool, "checkedin", lambda: 0)(),
+                "checked_out": getattr(pool, "checkedout", lambda: 0)(),
+                "overflow": getattr(pool, "overflow", lambda: 0)(),
+                "max_overflow": getattr(pool, "_max_overflow", 0),
+            },
         }
-    except Exception:
-        health_status["circuit_breaker"] = {"state": "unknown"}
-    
-    return health_status
+    except Exception as exc:  # pragma: no cover - relies on environment
+        data["database"] = {"status": "disconnected", "error": str(exc)}
+        data["status"] = "degraded"
+
+    try:
+        info = redis_client.info()
+        data["redis"] = {
+            "status": "connected",
+            "connected_clients": info.get("connected_clients"),
+            "uptime": info.get("uptime_in_seconds"),
+            "memory": info.get("used_memory_human") or info.get("used_memory"),
+            "ops_per_sec": info.get("instantaneous_ops_per_sec"),
+        }
+    except Exception as exc:  # pragma: no cover - relies on environment
+        data["redis"] = {"status": "disconnected", "error": str(exc)}
+        data["status"] = "degraded"
+
+    return data
 
 
 @app.get("/health", response_class=HTMLResponse)
+def health_dashboard():
+    data = collect_health_data()
+    return HTMLResponse(content=render_health_dashboard(data))
+
+
 @app.get("/health.json")
-async def health_check(request: Request):
-    """Health check endpoint - returns HTML dashboard or JSON based on Accept header."""
-    health_status = await get_health_data()
-    
-    # Check if JSON is requested
-    accept_header = request.headers.get("Accept", "")
-    if "application/json" in accept_header or request.url.path.endswith(".json"):
-        return JSONResponse(content=health_status)
-    
-    # Return HTML dashboard
-    return HTMLResponse(content=generate_health_dashboard(health_status))
+def health_json():
+    return JSONResponse(content=collect_health_data())
 
 
 def generate_health_dashboard(health_data: dict) -> str:
-    """Generate HTML dashboard for health status."""
-    status = health_data.get("status", "unknown")
-    database_status = health_data.get("database", "unknown")
-    environment = health_data.get("environment", "unknown")
-    timestamp = health_data.get("timestamp", "")
-    
-    # Determine urgency and impact
-    if database_status == "connected" and status == "healthy":
-        urgency_level = "low"
-        urgency_color = "#10b981"  # green
-        urgency_label = "All Systems Operational"
-        impact = "None - System fully operational"
-        stability = "100%"
-    elif database_status == "disconnected":
-        urgency_level = "critical"
-        urgency_color = "#ef4444"  # red
-        urgency_label = "Critical - Database Disconnected"
-        impact = "High - All database operations failing, login and data management unavailable"
-        stability = "0%"
-    elif status == "degraded":
-        urgency_level = "high"
-        urgency_color = "#f59e0b"  # amber
-        urgency_label = "Degraded - Service Issues"
-        impact = "Medium - Some features may be unavailable"
-        stability = "50%"
-    else:
-        urgency_level = "medium"
-        urgency_color = "#f59e0b"
-        urgency_label = "Unknown Status"
-        impact = "Unknown - Unable to determine system state"
-        stability = "Unknown"
-    
-    # Get pool metrics
-    pool_data = health_data.get("database_pool", {})
-    pool_size = pool_data.get("size", 0)
-    checked_in = pool_data.get("checked_in", 0)
-    checked_out = pool_data.get("checked_out", 0)
-    overflow = pool_data.get("overflow", 0)
-    max_overflow = pool_data.get("max_overflow", 0)
-    total_available = pool_data.get("total_available", pool_size + max_overflow)
-    utilization_percent = pool_data.get("utilization_percent", 0)
-    
-    # Circuit breaker data
-    cb_data = health_data.get("circuit_breaker", {})
-    cb_state = cb_data.get("state", "unknown")
-    cb_failures = cb_data.get("failure_count", 0)
-    cb_threshold = cb_data.get("failure_threshold", 5)
-    
-    # Error information
-    error_type = health_data.get("error_type", "")
-    error_message = health_data.get("error_message", "")
-    database_error = health_data.get("database_error", "")
-    
-    # Determine chart color based on utilization
-    chart_color = "#10b981"  # green
-    if utilization_percent > 80:
-        chart_color = "#ef4444"  # red
-    elif utilization_percent > 50:
-        chart_color = "#f59e0b"  # amber
-    
-    html = f"""<!DOCTYPE html>
+    """Deprecated wrapper for legacy imports; kept for compatibility."""
+    return render_health_dashboard(health_data)
+
+
+def render_health_dashboard(health_data: dict) -> str:
+    """Render the refreshed health dashboard."""
+    status = (health_data.get("status") or "unknown").upper()
+    database = health_data.get("database") or {}
+    redis_info = health_data.get("redis") or {}
+    environment = health_data.get("environment") or "unknown"
+    timestamp = health_data.get("timestamp") or ""
+    pool = database.get("pool") or {}
+
+    pool_size = pool.get("size") or 0
+    checked_out = pool.get("checked_out") or 0
+    max_overflow = pool.get("max_overflow") or 0
+    total_capacity = pool_size + max_overflow if pool_size or max_overflow else 0
+    utilization = round((checked_out / total_capacity) * 100, 2) if total_capacity else 0.0
+
+    initial_payload = json.dumps(health_data)
+
+    return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>System Health Dashboard - Lead Scoring System</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LeadScore AI • Health Center</title>
     <style>
+        :root {{
+            --navy-dark: #050d1f;
+            --navy: #0b1f3a;
+            --navy-light: #132c54;
+            --background: #f3f5fb;
+            --white: #ffffff;
+            --success: #06d6a0;
+            --warning: #f6ad55;
+            --danger: #f26464;
+        }}
+
         * {{
-            margin: 0;
-            padding: 0;
             box-sizing: border-box;
         }}
-        
+
         body {{
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-            color: #1f2937;
+            margin: 0;
+            font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: var(--navy-dark);
+            color: var(--navy);
         }}
-        
-        .container {{
-            max-width: 1400px;
-            margin: 0 auto;
+
+        header {{
+            padding: 36px 6vw 28px;
+            background: var(--navy);
+            color: var(--white);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
         }}
-        
-        .header {{
-            background: white;
-            border-radius: 12px;
-            padding: 24px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+
+        header h1 {{
+            margin: 0 0 8px;
+            font-size: 34px;
+            font-weight: 700;
         }}
-        
-        .header h1 {{
-            font-size: 28px;
-            margin-bottom: 8px;
-            color: #111827;
+
+        header p {{
+            margin: 0;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 15px;
         }}
-        
-        .header .subtitle {{
-            color: #6b7280;
-            font-size: 14px;
+
+        main {{
+            background: var(--background);
+            padding: 32px 6vw 48px;
+            min-height: calc(100vh - 140px);
         }}
-        
-        .status-badge {{
-            display: inline-block;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 14px;
-            margin-top: 12px;
-            background: {urgency_color};
-            color: white;
-        }}
-        
+
         .grid {{
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            margin-bottom: 20px;
+            gap: 24px;
         }}
-        
+
+        .grid-3 {{
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        }}
+
+        .grid-2 {{
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        }}
+
         .card {{
-            background: white;
-            border-radius: 12px;
+            background: var(--white);
+            border-radius: 20px;
             padding: 24px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 16px 40px rgba(11, 31, 58, 0.08);
         }}
-        
+
         .card h2 {{
-            font-size: 18px;
-            margin-bottom: 16px;
-            color: #111827;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            margin: 0 0 12px;
+            font-size: 15px;
+            letter-spacing: 0.12em;
+            font-weight: 600;
+            color: var(--navy-light);
+            text-transform: uppercase;
         }}
-        
+
         .metric {{
-            display: flex;
-            justify-content: space-between;
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: var(--navy);
+        }}
+
+        .meta {{
+            font-size: 13px;
+            color: rgba(11, 31, 58, 0.6);
+        }}
+
+        .status-chip {{
+            display: inline-flex;
             align-items: center;
-            padding: 12px 0;
-            border-bottom: 1px solid #e5e7eb;
-        }}
-        
-        .metric:last-child {{
-            border-bottom: none;
-        }}
-        
-        .metric-label {{
-            color: #6b7280;
-            font-size: 14px;
-        }}
-        
-        .metric-value {{
+            padding: 8px 14px;
+            border-radius: 999px;
+            font-size: 12px;
             font-weight: 600;
-            font-size: 18px;
-            color: #111827;
+            letter-spacing: 0.18em;
         }}
-        
-        .metric-value.high {{
-            color: #ef4444;
+
+        .status-chip.HEALTHY {{
+            background: rgba(6, 214, 160, 0.2);
+            color: var(--success);
         }}
-        
-        .metric-value.medium {{
-            color: #f59e0b;
+
+        .status-chip.DEGRADED {{
+            background: rgba(246, 173, 85, 0.24);
+            color: #c05621;
         }}
-        
-        .metric-value.low {{
-            color: #10b981;
+
+        .status-chip.DISCONNECTED {{
+            background: rgba(242, 100, 100, 0.24);
+            color: var(--danger);
         }}
-        
-        .progress-bar {{
+
+        table {{
             width: 100%;
-            height: 24px;
-            background: #e5e7eb;
-            border-radius: 12px;
-            overflow: hidden;
-            margin-top: 8px;
-        }}
-        
-        .progress-fill {{
-            height: 100%;
-            background: linear-gradient(90deg, #10b981, #059669);
-            transition: width 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 12px;
-            font-weight: 600;
-        }}
-        
-        .progress-fill.medium {{
-            background: linear-gradient(90deg, #f59e0b, #d97706);
-        }}
-        
-        .progress-fill.high {{
-            background: linear-gradient(90deg, #ef4444, #dc2626);
-        }}
-        
-        .chart-container {{
-            position: relative;
-            height: 300px;
-            margin-top: 16px;
-        }}
-        
-        .alert {{
-            background: #fef3c7;
-            border-left: 4px solid #f59e0b;
-            padding: 16px;
-            border-radius: 8px;
-            margin-top: 16px;
-        }}
-        
-        .alert.critical {{
-            background: #fee2e2;
-            border-left-color: #ef4444;
-        }}
-        
-        .alert h3 {{
-            color: #92400e;
-            margin-bottom: 8px;
-            font-size: 16px;
-        }}
-        
-        .alert.critical h3 {{
-            color: #991b1b;
-        }}
-        
-        .alert p {{
-            color: #78350f;
+            border-collapse: collapse;
             font-size: 14px;
-            line-height: 1.6;
         }}
-        
-        .alert.critical p {{
-            color: #7f1d1d;
+
+        th {{
+            text-align: left;
+            padding: 6px 0;
+            color: rgba(11, 31, 58, 0.6);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }}
-        
-        .refresh-indicator {{
+
+        td {{
+            padding: 6px 0;
+            color: rgba(11, 31, 58, 0.82);
+        }}
+
+        .footer {{
+            margin-top: 32px;
             text-align: center;
-            color: #6b7280;
-            font-size: 12px;
-            margin-top: 16px;
-            padding-top: 16px;
-            border-top: 1px solid #e5e7eb;
-        }}
-        
-        .timestamp {{
-            color: #9ca3af;
-            font-size: 12px;
-            margin-top: 8px;
-        }}
-        
-        @media (max-width: 768px) {{
-            .grid {{
-                grid-template-columns: 1fr;
-            }}
+            font-size: 13px;
+            color: rgba(11, 31, 58, 0.55);
         }}
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🏥 System Health Dashboard</h1>
-            <div class="subtitle">Lead Scoring System v2.0 - Real-time Monitoring</div>
-            <div class="status-badge">{urgency_label}</div>
-            <div class="timestamp">Last Updated: <span id="timestamp">{timestamp}</span></div>
-        </div>
-        
-        <div class="grid">
+    <header>
+        <h1>LeadScore AI — Health Center</h1>
+        <p>Live operational status for your Railway deployment.</p>
+    </header>
+    <main>
+        <div class="grid grid-3">
             <div class="card">
-                <h2>📊 System Status</h2>
-                <div class="metric">
-                    <span class="metric-label">Overall Status</span>
-                    <span class="metric-value {urgency_level}">{status.upper()}</span>
-                </div>
-                <div class="metric">
-                    <span class="metric-label">Environment</span>
-                    <span class="metric-value">{environment}</span>
-                </div>
-                <div class="metric">
-                    <span class="metric-label">Urgency Level</span>
-                    <span class="metric-value {urgency_level}">{urgency_level.upper()}</span>
-                </div>
-                <div class="metric">
-                    <span class="metric-label">System Stability</span>
-                    <span class="metric-value {urgency_level}">{stability}</span>
-                </div>
+                <h2>System Status</h2>
+                <div id="system-chip" class="status-chip {status}">{status}</div>
+                <div class="meta" id="timestamp-value">Updated {timestamp}</div>
             </div>
-            
             <div class="card">
-                <h2>🗄️ Database Status</h2>
-                <div class="metric">
-                    <span class="metric-label">Connection</span>
-                    <span class="metric-value {('low' if database_status == 'connected' else 'critical')}">{database_status.upper()}</span>
-                </div>
-                <div class="metric">
-                    <span class="metric-label">Pool Size</span>
-                    <span class="metric-value">{pool_size}</span>
-                </div>
-                <div class="metric">
-                    <span class="metric-label">Active Connections</span>
-                    <span class="metric-value {('high' if checked_out > total_available * 0.8 else 'low')}">{checked_out}</span>
-                </div>
-                <div class="metric">
-                    <span class="metric-label">Available Connections</span>
-                    <span class="metric-value">{total_available}</span>
-                </div>
+                <h2>Environment</h2>
+                <div class="metric" id="environment-value">{environment}</div>
+                <div class="meta">Railway environment</div>
             </div>
-            
             <div class="card">
-                <h2>⚡ Connection Pool</h2>
-                <div class="metric">
-                    <span class="metric-label">Utilization</span>
-                    <span class="metric-value {('high' if utilization_percent > 80 else 'medium' if utilization_percent > 50 else 'low')}">{utilization_percent}%</span>
-                </div>
-                <div class="progress-bar">
-                    <div class="progress-fill {('high' if utilization_percent > 80 else 'medium' if utilization_percent > 50 else 'low')}" style="width: {min(utilization_percent, 100)}%">
-                        {utilization_percent}%
-                    </div>
-                </div>
-                <div class="metric">
-                    <span class="metric-label">Checked In</span>
-                    <span class="metric-value">{checked_in}</span>
-                </div>
-                <div class="metric">
-                    <span class="metric-label">Checked Out</span>
-                    <span class="metric-value">{checked_out}</span>
-                </div>
-                <div class="metric">
-                    <span class="metric-label">Overflow</span>
-                    <span class="metric-value">{overflow} / {max_overflow}</span>
+                <h2>Database Utilization</h2>
+                <div class="metric" id="db-utilization">{utilization}%</div>
+                <div class="meta" id="db-connections">
+                    Active connections: {checked_out} / {pool_size}
                 </div>
             </div>
-            
+        </div>
+
+        <div class="grid grid-2" style="margin-top: 24px;">
             <div class="card">
-                <h2>🔌 Circuit Breaker</h2>
-                <div class="metric">
-                    <span class="metric-label">State</span>
-                    <span class="metric-value {('high' if cb_state == 'open' else 'low')}">{cb_state.upper()}</span>
-                </div>
-                <div class="metric">
-                    <span class="metric-label">Failures</span>
-                    <span class="metric-value {('high' if cb_failures >= cb_threshold * 0.8 else 'medium' if cb_failures > 0 else 'low')}">{cb_failures} / {cb_threshold}</span>
-                </div>
-                <div class="progress-bar">
-                    <div class="progress-fill {('high' if cb_failures >= cb_threshold * 0.8 else 'medium' if cb_failures > 0 else 'low')}" style="width: {min((cb_failures / cb_threshold) * 100, 100)}%">
-                        {cb_failures} / {cb_threshold}
-                    </div>
-                </div>
+                <h2>Database</h2>
+                <div id="db-chip" class="status-chip {(database.get('status') or 'unknown').upper()}">{(database.get('status') or 'unknown').upper()}</div>
+                <table style="margin-top: 12px;">
+                    <tr><th>Checked In</th><td id="db-checked-in">{pool.get('checked_in', 0)}</td></tr>
+                    <tr><th>Checked Out</th><td id="db-checked-out">{pool.get('checked_out', 0)}</td></tr>
+                    <tr><th>Overflow</th><td id="db-overflow">{pool.get('overflow', 0)}</td></tr>
+                    <tr><th>Error</th><td id="db-error">{database.get('error', '')}</td></tr>
+                </table>
+            </div>
+            <div class="card">
+                <h2>Redis Cache</h2>
+                <div id="redis-chip" class="status-chip {(redis_info.get('status') or 'unknown').upper()}">{(redis_info.get('status') or 'unknown').upper()}</div>
+                <table style="margin-top: 12px;">
+                    <tr><th>Clients</th><td id="redis-clients">{redis_info.get('connected_clients', '--')}</td></tr>
+                    <tr><th>Ops / sec</th><td id="redis-ops">{redis_info.get('ops_per_sec', '--')}</td></tr>
+                    <tr><th>Memory</th><td id="redis-memory">{redis_info.get('memory', '--')}</td></tr>
+                    <tr><th>Error</th><td id="redis-error">{redis_info.get('error', '')}</td></tr>
+                </table>
             </div>
         </div>
-        
-        <div class="card">
-            <h2>📈 Connection Pool Utilization</h2>
-            <div class="chart-container">
-                <canvas id="poolChart"></canvas>
-            </div>
-        </div>
-        
-        <div class="card">
-            <h2>🎯 Impact Analysis</h2>
-            <div class="metric">
-                <span class="metric-label">Impact on System</span>
-                <span class="metric-value {urgency_level}">{impact}</span>
-            </div>
-            <div class="metric">
-                <span class="metric-label">Stability Score</span>
-                <span class="metric-value {urgency_level}">{stability}</span>
-            </div>
-        </div>
-        
-        {f'''
-        <div class="alert {"critical" if urgency_level == "critical" else ""}">
-            <h3>⚠️ {'Critical Issue Detected' if urgency_level == 'critical' else 'Service Degradation'}</h3>
-            <p><strong>Error Type:</strong> {error_type or 'Unknown'}</p>
-            <p><strong>Message:</strong> {error_message or database_error or 'No additional error information available'}</p>
-            <p><strong>Impact:</strong> {impact}</p>
-        </div>
-        ''' if database_status == 'disconnected' or status == 'degraded' else ''}
-        
-        <div class="refresh-indicator">
-            <span id="refreshStatus">Auto-refreshing every 5 seconds...</span>
-        </div>
-    </div>
-    
+
+        <div class="footer">Dashboard auto-refreshes every 10 seconds.</div>
+    </main>
+
+    <script type="application/json" id="health-data">{initial_payload}</script>
     <script>
-        // Connection Pool Chart
-        const poolCtx = document.getElementById('poolChart').getContext('2d');
-        const poolChart = new Chart(poolCtx, {{
-            type: 'doughnut',
-            data: {{
-                labels: ['Used Connections', 'Available Connections'],
-                datasets: [{{
-                    data: [{checked_out}, {total_available - checked_out}],
-                    backgroundColor: [
-                        '{chart_color}',
-                        '#e5e7eb'
-                    ],
-                    borderWidth: 0
-                }}]
-            }},
-            options: {{
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {{
-                    legend: {{
-                        position: 'bottom'
-                    }},
-                    tooltip: {{
-                        callbacks: {{
-                            label: function(context) {{
-                                return context.label + ': ' + context.parsed + ' connections';
-                            }}
-                        }}
-                    }}
-                }}
+        const dataElement = document.getElementById("health-data");
+
+        function applyStatusChip(id, status) {{
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.textContent = status;
+            el.className = "status-chip " + status;
+        }}
+
+        function updateUI(data) {{
+            const status = (data.status || "unknown").toUpperCase();
+            const db = data.database || {{}};
+            const pool = db.pool || {{}};
+            const redis = data.redis || {{}};
+
+            const poolSize = pool.size || 0;
+            const checkedOut = pool.checked_out || 0;
+            const maxOverflow = pool.max_overflow || 0;
+            const total = poolSize + maxOverflow;
+            const utilization = total ? Math.round((checkedOut / total) * 100) : 0;
+
+            applyStatusChip("system-chip", status);
+            document.getElementById("timestamp-value").textContent =
+                "Updated " + new Date(data.timestamp || Date.now()).toLocaleString();
+            document.getElementById("environment-value").textContent = data.environment || "unknown";
+            document.getElementById("db-utilization").textContent = utilization + "%";
+            document.getElementById("db-connections").textContent =
+                `Active connections: ${pool.checked_out || 0} / ${pool.size || 0}`;
+
+            const dbStatus = (db.status || "unknown").toUpperCase();
+            applyStatusChip("db-chip", dbStatus);
+            document.getElementById("db-checked-in").textContent = pool.checked_in ?? 0;
+            document.getElementById("db-checked-out").textContent = pool.checked_out ?? 0;
+            document.getElementById("db-overflow").textContent = pool.overflow ?? 0;
+            document.getElementById("db-error").textContent = db.error || "";
+
+            const redisStatus = (redis.status || "unknown").toUpperCase();
+            applyStatusChip("redis-chip", redisStatus);
+            document.getElementById("redis-clients").textContent = redis.connected_clients ?? "--";
+            document.getElementById("redis-ops").textContent = redis.ops_per_sec ?? "--";
+            document.getElementById("redis-memory").textContent = redis.memory ?? "--";
+            document.getElementById("redis-error").textContent = redis.error || "";
+        }}
+
+        async function refresh() {{
+            try {{
+                const response = await fetch("/health.json", {{ cache: "no-store" }});
+                if (!response.ok) return;
+                const data = await response.json();
+                updateUI(data);
+            }} catch (err) {{
+                console.warn("Health refresh failed", err);
             }}
-        }});
-        
-        // Auto-refresh every 5 seconds
-        let refreshCount = 0;
-        setInterval(() => {{
-            refreshCount++;
-            document.getElementById('refreshStatus').textContent = `Auto-refreshing every 5 seconds... (Refreshed ${{refreshCount}} times)`;
-            location.reload();
-        }}, 5000);
-        
-        // Update timestamp
-        document.getElementById('timestamp').textContent = new Date().toLocaleString();
+        }}
+
+        updateUI(JSON.parse(dataElement.textContent));
+        setInterval(refresh, 10000);
     </script>
 </body>
 </html>"""
@@ -948,3 +781,5 @@ app.add_exception_handler(Exception, global_exception_handler)
 
 # Configure routers
 configure_routers(app)
+start_email_sync_scheduler(app)
+start_crm_sync_scheduler(app)

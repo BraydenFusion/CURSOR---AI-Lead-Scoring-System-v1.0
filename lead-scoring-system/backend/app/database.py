@@ -7,6 +7,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, scoped_session, sessionmaker
 
 from .config import get_settings
+from .utils.sqlalchemy_compat import apply_sqlalchemy_typing_compat
+
+apply_sqlalchemy_typing_compat()
 
 logger = logging.getLogger(__name__)
 
